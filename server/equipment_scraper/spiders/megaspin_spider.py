@@ -1,8 +1,11 @@
 import scrapy
 
-from ttequipment.items import EquipmentItem
+from equipment_scraper.items import EquipmentItem
 
 class MegaspinSpider(scrapy.Spider):
+    """
+    Spider for scraping equipment data from Megaspin. Can handle any equipment type.
+    """
     allowed_domains = ['www.megaspin.com']
 
     def __init__(self, *args, **kwargs):

@@ -1,8 +1,11 @@
 import scrapy
 
-from ttequipment.items import EquipmentItem
+from equipment_scraper.items import EquipmentItem
 
 class TT11Spider(scrapy.Spider):
+    """
+    Spider for scraping equipment data from Tabletennis11. Can handle any equipment type.
+    """
     allowed_domains = ['www.tabletennis11.com']
 
     def __init__(self, *args, **kwargs):

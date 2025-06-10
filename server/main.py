@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+"""
+Program: ttserver
+
+Description: A Flask REST API server to manage table tennis equipment data stored in MongoDB.
+
+Usage: Run the included bash script to start the server.
+"""
 from flask import Flask, jsonify, request
 from pymongo import MongoClient
 
@@ -10,21 +18,35 @@ db = client['ttequipment_db']
 
 @app.route('/rubbers', methods=['GET'])
 def get_rubbers():
+    """
+    Retrieve the matching rubbers from the database given a name.
+    If no name is provided, return all rubbers.
+    """
     return get_equipment('rubber', request)
 
 
 @app.route('/blades', methods=['GET'])
 def get_blades():
+    """
+    Retrieve the matching blades from the database given a name.
+    If no name is provided, return all blades.
+    """
     return get_equipment('blade', request)
 
 
 @app.route('/equipment', methods=['GET'])
 def get_equipment_options():
+    """
+    Return all available equipment types.
+    """
     return jsonify(db.list_collection_names())
 
 
 @app.route('/delete/<equipment_type>', methods=['DELETE'])
 def delete_equipment(equipment_type):
+    """
+    Delete the specified equipment item.
+    """
     collection_name = equipment_type + 's'
     if collection_name not in db.list_collection_names():
         return jsonify({'error': 'Invalid equipment type'}), 400
@@ -44,8 +66,6 @@ def delete_equipment(equipment_type):
         return jsonify({'error': f'No matches found for the {equipment_type} "{name}" at "{site}"'}), 404
     if num_matches > 1:
         return jsonify({'error': f'Multiple matches found for the {equipment_type} "{name}" at "{site}"'}), 400
-
-    print(name)
 
     # Delete the equipment item
     result = collection.delete_one({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})

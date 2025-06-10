@@ -1,6 +1,15 @@
+#!/usr/bin/env python3
+"""
+Program: ttclient
+
+Description: Retrieve and manage table tennis equipment data.
+
+Usage:
+    ttclient get -e <equipment_type> [-n <name>]
+    ttclient delete -e <equipment_type> -n <name> -s <site>
+"""
 import argparse
 import requests
-import json
 
 
 def main():
@@ -91,11 +100,12 @@ def get_with_name(args):
     result = response.json()
 
     if len(result) > 1:
+        # If we found multiple items, print their names and lowest prices
         print(f'Found {len(result)} {args.equipment_type}s matching "{args.name}":')
-        print('Name          Price')
+        print(f'{'Name':<50} Current Price')
         for item in response.json():
             lowestPrice = min(entry['price'] for entry in item['entries'])
-            print(item['name'], lowestPrice)
+            print(f'{item['name']:<50} {lowestPrice}')
     else:
         # If we only found one item, print its details
         # Start by getting the site with the lowest price
