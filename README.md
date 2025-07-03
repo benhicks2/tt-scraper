@@ -47,6 +47,7 @@ Where spider name is one of the following:
 - `rubber_megaspin`
 - `blade_tt11`
 - `blade_megaspin`
+
 This will populate the corresponding collection (rubbers or blades) with the data, or update the existing values.
 
 ### Flask server
