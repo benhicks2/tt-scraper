@@ -8,12 +8,16 @@ Usage: Run the included bash script to start the server.
 """
 from flask import Flask, jsonify, request
 from pymongo import MongoClient
+import configparser
 
 app = Flask(__name__)
 
 # Setup MongoDB
-client = MongoClient('mongodb://localhost:27017/')
-db = client['ttequipment_db']
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+client = MongoClient(config['database']['host'], config['database'].getint('port'))
+db = client[config['database']['db_name']]
 
 
 @app.route('/rubbers', methods=['GET'])

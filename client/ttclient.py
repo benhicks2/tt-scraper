@@ -10,9 +10,15 @@ Usage:
 """
 import argparse
 import requests
-
+import configparser
 
 def main():
+    """
+    Main function to parse arguments and call the appropriate function.
+    """
+    # Retrieve the server from the config file
+    server = Server().get()
+
     parser = argparse.ArgumentParser(description='Retrieve table tennis equipment data.')
     subparsers = parser.add_subparsers(required=True)
 
@@ -45,22 +51,22 @@ def main():
     delete_parser.set_defaults(func=delete)
 
     args = parser.parse_args()
-    args.func(args)
+    args.func(args, server)
 
 
-def get(args):
+def get(args, server):
     """
     Return all matching equipment items given the name.
     If no name is provided, return all items of the given type.
     """
 
     if args.name:
-        get_with_name(args)
+        get_with_name(args, server)
     else:
-        get_all(args)
+        get_all(args, server)
 
 
-def delete(args):
+def delete(args, server):
     """
     Delete the given equipment item from the database (will be repopulated on the next scrape).
     """
@@ -73,7 +79,7 @@ def delete(args):
         return
 
     try:
-        response = requests.delete(f'http://localhost:5000/delete/{args.equipment_type}',
+        response = requests.delete(f'{server}{args.equipment_type}',
                                    json={'name': args.name, 'site': args.site})
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -84,13 +90,13 @@ def delete(args):
     print(f'Deleted the {get_hostname(args.site)} {args.equipment_type} {args.name}')
 
 
-def get_with_name(args):
+def get_with_name(args, server):
     """
     Return all matching equipment items given the name.
     """
 
     try:
-        response = requests.get(f'http://localhost:5000/{args.equipment_type}s', json={'name': args.name})
+        response = requests.get(f'{server}{args.equipment_type}s', json={'name': args.name})
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         raise SystemExit(f'{response.json()['error']}')
@@ -125,13 +131,13 @@ def get_with_name(args):
                     print(f'    {entry['url']} - {entry['price']}')
 
 
-def get_all(args):
+def get_all(args, server):
     """
     Return all equipment items of the given type. Only prints the name.
     """
 
     try:
-        response = requests.get(f'http://localhost:5000/{args.equipment_type}s')
+        response = requests.get(f'{server}{args.equipment_type}s')
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         raise SystemExit(f'{response.json()["error"]}')
@@ -148,6 +154,22 @@ def get_hostname(url):
     Extract the hostname from the given URL.
     """
     return url.split('www.')[-1].split('.com')[0].split('.org')[0].split('.net')[0]
+
+
+class Server():
+    """
+    Saves the config file server value.
+    """
+    def __init__(self):
+        config = configparser.ConfigParser()
+        config.read('clientconfig.ini')
+        self.server = config['server']['hostname']
+
+    def get(self):
+        """
+        Returns the server.
+        """
+        return self.server
 
 
 if __name__ == '__main__':

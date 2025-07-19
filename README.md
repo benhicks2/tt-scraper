@@ -4,6 +4,7 @@
 ### File structure
 ```
 ├── client
+|   ├── clientconfig.ini
 │   └── ttclient.py
 ├── requirements.txt
 └── server
@@ -20,7 +21,9 @@
     │       ├── rubber_tt11.py
     │       └── tt11_spider.py
     ├── main.py
+    ├── config.ini
     ├── scrapy.cfg
+    ├── scrape.sh
     └── start.sh
 ```
 ### Folder information
@@ -35,7 +38,7 @@
 ### Prerequisites
 - Scrapy, Python, and pip are installed.
 - MongoDB is installed and started, and contains the following:
-    - A database called `ttequipment_db`.
+    - A database called `ttequipment_db`. This default can be changed in the `config.ini` file.
     - 2 collections: `rubbers` and `blades`.
 
 ### Scraper
@@ -48,7 +51,7 @@ Where spider name is one of the following:
 - `blade_tt11`
 - `blade_megaspin`
 
-This will populate the corresponding collection (rubbers or blades) with the data, or update the existing values.
+This will populate the corresponding collection (rubbers or blades) with the data, or update the existing values. Optionally, run the `scrape.sh` script to run all 4 spiders as well.
 
 ### Flask server
 ```
