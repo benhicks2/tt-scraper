@@ -70,5 +70,8 @@ Run the following for more detailed information on using the CLI.
 python ttclient.py -h
 ```
 
+### Tests
+TODO
+
 ## Disclaimer
 Use at your own risk, creator is not responsible for any misuse of this tool.
