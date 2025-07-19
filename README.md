@@ -37,6 +37,7 @@
 ## Using the Tool
 ### Prerequisites
 - Scrapy, Python, and pip are installed.
+    - Python should be 3.12 or newer.
 - MongoDB is installed and started, and contains the following:
     - A database called `ttequipment_db`. This default can be changed in the `config.ini` file.
     - 2 collections: `rubbers` and `blades`.
