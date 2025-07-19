@@ -9,6 +9,7 @@ Usage: Run the included bash script to start the server.
 from flask import Flask, jsonify, request
 from pymongo import MongoClient
 import configparser
+import subprocess
 
 app = Flask(__name__)
 
@@ -19,8 +20,10 @@ config.read('config.ini')
 client = MongoClient(config['database']['host'], config['database'].getint('port'))
 db = client[config['database']['db_name']]
 
+VALID_EQUIPMENT_TYPES = ['blade', 'rubber']
 
-@app.route('/rubbers', methods=['GET'])
+
+@app.route('/rubber', methods=['GET'])
 def get_rubbers():
     """
     Retrieve the matching rubbers from the database given a name.
@@ -29,7 +32,7 @@ def get_rubbers():
     return get_equipment('rubber', request)
 
 
-@app.route('/blades', methods=['GET'])
+@app.route('/blade', methods=['GET'])
 def get_blades():
     """
     Retrieve the matching blades from the database given a name.
@@ -46,13 +49,13 @@ def get_equipment_options():
     return jsonify(db.list_collection_names())
 
 
-@app.route('/delete/<equipment_type>', methods=['DELETE'])
+@app.route('/<equipment_type>', methods=['DELETE'])
 def delete_equipment(equipment_type):
     """
     Delete the specified equipment item.
     """
     collection_name = equipment_type + 's'
-    if collection_name not in db.list_collection_names():
+    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (collection_name not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
 
     data = request.get_json()
@@ -62,7 +65,7 @@ def delete_equipment(equipment_type):
     name = data['name'].strip()
     site = data['site'].strip()
 
-    collection = db[collection_name]
+    collection = db[equipment_type]
 
     # Check if the equipment item exists, and there's only one match
     num_matches = collection.count_documents({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})
@@ -76,6 +79,21 @@ def delete_equipment(equipment_type):
     if result.deleted_count > 0:
         return jsonify({'status': 'success'}), 200
     return jsonify({'error': f'Unable to delete the {equipment_type} "{name}" at "{site}"'}), 404
+
+
+@app.route('/<equipment_type>', methods=['PUT'])
+def update_equipment(equipment_type):
+    """
+    Update the specified equipment item.
+    """
+    collection_name = equipment_type + 's'
+    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (collection_name not in db.list_collection_names()):
+        return jsonify({'error': 'Invalid equipment type'}), 400
+
+    result = subprocess.run(['python3', 'run_spider.py', equipment_type]).returncode
+    if result != 0:
+        return jsonify({'error': 'Failed to run the spider'}), 500
+    return jsonify({'status': 'success'}), 200
 
 
 def get_equipment(equipment_type, request):

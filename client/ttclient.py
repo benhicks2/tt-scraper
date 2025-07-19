@@ -32,6 +32,7 @@ def main():
     # Each command
     get_parser = subparsers.add_parser('get', help='Get equipment data', parents=[parent_parser])
     delete_parser = subparsers.add_parser('delete', help='Delete equipment data', parents=[parent_parser])
+    update_parser = subparsers.add_parser('update', help='Update equipment data by re-scraping the given equipment type', parents=[parent_parser])
 
     # Arguments for each command
     # get
@@ -49,6 +50,9 @@ def main():
                                help='Site to delete the equipment from, ' \
                                     'can be a substring of the URL')
     delete_parser.set_defaults(func=delete)
+
+    # update
+    update_parser.set_defaults(func=update)
 
     args = parser.parse_args()
     args.func(args, server)
@@ -79,7 +83,7 @@ def delete(args, server):
         return
 
     try:
-        response = requests.delete(f'{server}{args.equipment_type}',
+        response = requests.delete(f'{server}/{args.equipment_type}s',
                                    json={'name': args.name, 'site': args.site})
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -90,13 +94,28 @@ def delete(args, server):
     print(f'Deleted the {get_hostname(args.site)} {args.equipment_type} {args.name}')
 
 
+def update(args, server):
+    """
+    Update the specified equipment item by re-scraping the given equipment type.
+    """
+    try:
+        response = requests.put(f'{server}/{args.equipment_type}')
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(f'{response.json()["error"]}')
+    except requests.exceptions.RequestException as err:
+        raise SystemExit(err)
+
+    print(f'{args.equipment_type.capitalize()} spider is running...')
+
+
 def get_with_name(args, server):
     """
     Return all matching equipment items given the name.
     """
 
     try:
-        response = requests.get(f'{server}{args.equipment_type}s', json={'name': args.name})
+        response = requests.get(f'{server}/{args.equipment_type}', json={'name': args.name})
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         raise SystemExit(f'{response.json()['error']}')
@@ -137,7 +156,7 @@ def get_all(args, server):
     """
 
     try:
-        response = requests.get(f'{server}{args.equipment_type}s')
+        response = requests.get(f'{server}/{args.equipment_type}')
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         raise SystemExit(f'{response.json()["error"]}')

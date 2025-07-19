@@ -1,6 +1,6 @@
 from .megaspin_spider import MegaspinSpider
 
-class BladeSpiderMegaspin(MegaspinSpider):
+class RubberSpiderMegaspin(MegaspinSpider):
     """
     Spider for scraping the blades from Megaspin.
     """

@@ -1,1 +1,1 @@
-flask --app main.py
+flask --app app.py run --debug
