@@ -3,28 +3,33 @@
 ## Getting Started
 ### File structure
 ```
-├── client
-|   ├── clientconfig.ini
-│   └── ttclient.py
+├── README.md
 ├── requirements.txt
-└── server
-    ├── equipment_scraper
-    │   ├── items.py
-    │   ├── middlewares.py
-    │   ├── pipelines.py
-    │   ├── settings.py
-    │   └── spiders
-    │       ├── blade_megaspin.py
-    │       ├── blade_tt11.py
-    │       ├── megaspin_spider.py
-    │       ├── rubber_megaspin.py
-    │       ├── rubber_tt11.py
-    │       └── tt11_spider.py
-    ├── main.py
-    ├── config.ini
-    ├── scrapy.cfg
-    ├── scrape.sh
-    └── start.sh
+├── client
+│   ├── clientconfig.ini
+│   └── ttclient.py
+├── server
+│   ├── app.py
+│   ├── config.ini
+│   ├── equipment_scraper
+│   │   ├── items.py
+│   │   ├── middlewares.py
+│   │   ├── pipelines.py
+│   │   ├── settings.py
+│   │   └── spiders
+│   │       ├── blade_megaspin.py
+│   │       ├── blade_tt11.py
+│   │       ├── megaspin_spider.py
+│   │       ├── rubber_megaspin.py
+│   │       ├── rubber_tt11.py
+│   │       └── tt11_spider.py
+│   ├── routes
+│   │   ├── equipment.py
+│   │   └── get_equipment.py
+│   ├── run_spider.py
+│   ├── scrape.sh
+│   ├── scrapy.cfg
+│   └── start.sh
 ```
 ### Folder information
 | Folder            | Description                                                          |
@@ -42,24 +47,11 @@
     - A database called `ttequipment_db`. This default can be changed in the `config.ini` file.
     - 2 collections: `rubbers` and `blades`.
 
-### Scraper
-```
-scrapy crawl <spider name>
-```
-Where spider name is one of the following:
-- `rubber_tt11`
-- `rubber_megaspin`
-- `blade_tt11`
-- `blade_megaspin`
-
-This will populate the corresponding collection (rubbers or blades) with the data, or update the existing values. Optionally, run the `scrape.sh` script to run all 4 spiders as well.
-
 ### Flask server
 ```
 pip install -r requirements.txt
 flask --app main.py
 ```
-The `pip` command is only required if those packages have not already been installed.
 
 ### Command line interface
 ```
@@ -69,6 +61,20 @@ Run the following for more detailed information on using the CLI.
 ```
 python ttclient.py -h
 ```
+The file `clientconfig.ini` can be modified to change any default settings.
+
+### Scraper
+The Flask server provides an endpoint to run the scraper, and can be issued with an `update` command. To run scrapy manually, run:
+```
+scrapy crawl <spider name>
+```
+Where spider name is one of the following:
+- `rubber_tt11`
+- `rubber_megaspin`
+- `blade_tt11`
+- `blade_megaspin`
+
+This will populate the corresponding collection (rubbers or blades) with the data, or update the existing values.
 
 ### Tests
 TODO
