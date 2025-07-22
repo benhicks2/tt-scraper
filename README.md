@@ -1,35 +1,13 @@
 # tt-scraper
 
 ## Getting Started
-### File structure
+### Folder structure
 ```
-├── README.md
-├── requirements.txt
-├── client
-│   ├── clientconfig.ini
-│   └── ttclient.py
-├── server
-│   ├── app.py
-│   ├── config.ini
-│   ├── equipment_scraper
-│   │   ├── items.py
-│   │   ├── middlewares.py
-│   │   ├── pipelines.py
-│   │   ├── settings.py
-│   │   └── spiders
-│   │       ├── blade_megaspin.py
-│   │       ├── blade_tt11.py
-│   │       ├── megaspin_spider.py
-│   │       ├── rubber_megaspin.py
-│   │       ├── rubber_tt11.py
-│   │       └── tt11_spider.py
-│   ├── routes
-│   │   ├── equipment.py
-│   │   └── get_equipment.py
-│   ├── run_spider.py
-│   ├── scrape.sh
-│   ├── scrapy.cfg
-│   └── start.sh
+├── client - CLI tool to communicate with the server.
+├── server - Flask REST API server.
+│   ├── equipment_scraper - Scrapy project to scrape the websites.
+│   │   └── spiders - Scrapy spiders, one for each page.
+│   └── routes - API endpoints.
 ```
 ### Folder information
 | Folder            | Description                                                          |
@@ -76,7 +54,7 @@ Where spider name is one of the following:
 
 This will populate the corresponding collection (rubbers or blades) with the data, or update the existing values.
 
-### Tests
+### Testing
 TODO
 
 ## Disclaimer
