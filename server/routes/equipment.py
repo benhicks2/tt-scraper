@@ -1,7 +1,13 @@
-from flask import Flask, jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint
 from pymongo import MongoClient
 import configparser
-import subprocess
+
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+from equipment_scraper.spiders.blade_megaspin import BladeSpiderMegaspin
+from equipment_scraper.spiders.rubber_megaspin import RubberSpiderMegaspin
+from equipment_scraper.spiders.blade_tt11 import BladeSpiderTT11
+from equipment_scraper.spiders.rubber_tt11 import RubberSpiderTT11
 
 VALID_EQUIPMENT_TYPES = ['blade', 'rubber']
 
@@ -12,6 +18,8 @@ config.read('config.ini')
 
 client = MongoClient(config['database']['host'], config['database'].getint('port'))
 db = client[config['database']['db_name']]
+
+process = CrawlerProcess(get_project_settings())
 
 
 @dp.route('/equipment', methods=['GET'])
@@ -100,8 +108,13 @@ def update_equipment(equipment_type):
     collection_name = equipment_type + 's'
     if (equipment_type not in VALID_EQUIPMENT_TYPES) or (collection_name not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
-
-    result = subprocess.run(['python3', 'run_spider.py', equipment_type]).returncode
-    if result != 0:
-        return jsonify({'error': 'Failed to run the spider'}), 500
+    
+    if equipment_type == 'blade':
+        process.crawl(BladeSpiderMegaspin)
+        # process.crawl(BladeSpiderTT11)
+    elif equipment_type == 'rubber':
+        process.crawl(RubberSpiderMegaspin)
+        # process.crawl(RubberSpiderTT11)
+    process.start(stop_after_crawl=True)
+    # TODO: Add a websocket so we can continuously update the status
     return jsonify({'status': 'success'}), 200

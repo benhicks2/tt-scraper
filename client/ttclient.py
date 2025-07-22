@@ -106,7 +106,7 @@ def update(args, server):
     except requests.exceptions.RequestException as err:
         raise SystemExit(err)
 
-    print(f'{args.equipment_type.capitalize()} spider is running...')
+    print(f'{args.equipment_type.capitalize()} data updated successfully')
 
 
 def get_with_name(args, server):
@@ -163,9 +163,12 @@ def get_all(args, server):
     except requests.exceptions.RequestException as err:
         raise SystemExit(err)
 
-    print('Name')
-    for item in response.json():
-        print(item)
+    if not response.json():
+        print(f'No {args.equipment_type}s found')
+    else:
+        print('Name')
+        for item in response.json():
+            print(item)
 
 
 def get_hostname(url):
