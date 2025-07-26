@@ -5,9 +5,9 @@
 
 import hashlib
 import pymongo
+from datetime import datetime
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-from scrapy.exceptions import DropItem
 import logging
 
 RUBBER_COLLECTION_NAME = 'rubbers'
@@ -69,17 +69,17 @@ class MongoPipeline:
             self.db[self.COLLECTION_NAME].insert_one({
                 '_id': item_id,
                 'name': item['name'],
-                'allTimeLowPrice': site_entry.price,
+                'all_time_low_price': site_entry.price,
                 'entries': [site_entry.asdict()]
             })
         else:
             # An existing item was updated, update the cheapest price if necessary
             db_item = self.db[self.COLLECTION_NAME].find_one({'_id': item_id})
-            if db_item and db_item['allTimeLowPrice'] > site_entry.price:
+            if db_item and db_item['all_time_low_price'] > site_entry.price:
                 logging.info('Updating lowest price for item: %s with ID %s', item['name'], item_id)
                 self.db[self.COLLECTION_NAME].update_one(
                     filter={'_id': item_id},
-                    update={'$set': {'allTimeLowPrice': site_entry.price}}
+                    update={'$set': {'all_time_low_price': site_entry.price}}
                 )
         return item
 
@@ -95,13 +95,14 @@ class SiteEntry():
     """
     Represents an entry in the equipment item database.
     """
-    def __init__(self, url, price):
+    def __init__(self, url, price, timestamp=datetime.now()):
         self._id = self.compute_id(url)
         self.url = url
         self.price = price
+        self.timestamp = timestamp
 
     def asdict(self):
-        return { '_id': self._id, 'url': self.url, 'price': self.price }
+        return { '_id': self._id, 'url': self.url, 'price': self.price, 'last_updated': self.timestamp }
 
     def compute_id(self, url):
         """

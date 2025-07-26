@@ -1,6 +1,7 @@
 from flask import jsonify, request, Blueprint
 from pymongo import MongoClient
 import configparser
+import datetime
 
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
@@ -10,6 +11,7 @@ from equipment_scraper.spiders.blade_tt11 import BladeSpiderTT11
 from equipment_scraper.spiders.rubber_tt11 import RubberSpiderTT11
 
 VALID_EQUIPMENT_TYPES = ['blade', 'rubber']
+MONTH_LENGTH = 30
 
 dp = Blueprint('equipment', __name__)
 
@@ -18,9 +20,6 @@ config.read('config.ini')
 
 client = MongoClient(config['database']['host'], config['database'].getint('port'))
 db = client[config['database']['db_name']]
-
-process = CrawlerProcess(get_project_settings())
-
 
 @dp.route('/equipment', methods=['GET'])
 def get_equipment_options():
@@ -62,6 +61,8 @@ def get_equipment(equipment_type):
     output = []
     for equipment in result:
         if equipment_name.casefold() in equipment['name'].casefold():
+            for entry in equipment['entries']:
+                entry['is_old'] = is_month_old(entry['last_updated'])
             output.append(equipment)
     if output:
         return jsonify(output)
@@ -109,6 +110,8 @@ def update_equipment(equipment_type):
     if (equipment_type not in VALID_EQUIPMENT_TYPES) or (collection_name not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
     
+    process = CrawlerProcess(get_project_settings())
+
     if equipment_type == 'blade':
         process.crawl(BladeSpiderMegaspin)
         # process.crawl(BladeSpiderTT11)
@@ -117,4 +120,13 @@ def update_equipment(equipment_type):
         # process.crawl(RubberSpiderTT11)
     process.start(stop_after_crawl=True)
     # TODO: Add a websocket so we can continuously update the status
+    process.stop()
     return jsonify({'status': 'success'}), 200
+
+
+def is_month_old(timestamp: datetime) -> bool:
+    """
+    Check if the given timestamp is older than one month.
+    """
+    last_month = datetime.datetime.now() - datetime.timedelta(days=MONTH_LENGTH)
+    return timestamp < last_month
