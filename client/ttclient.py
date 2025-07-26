@@ -12,6 +12,9 @@ import argparse
 import requests
 import configparser
 
+RED_CODE = '\033[0;31m'
+RESET_CODE = '\033[0m'
+
 def main():
     """
     Main function to parse arguments and call the appropriate function.
@@ -58,7 +61,7 @@ def main():
     args.func(args, server)
 
 
-def get(args, server):
+def get(args: argparse.Namespace, server: str) -> None:
     """
     Return all matching equipment items given the name.
     If no name is provided, return all items of the given type.
@@ -70,7 +73,7 @@ def get(args, server):
         get_all(args, server)
 
 
-def delete(args, server):
+def delete(args: argparse.Namespace, server: str) -> None:
     """
     Delete the given equipment item from the database (will be repopulated on the next scrape).
     """
@@ -94,7 +97,7 @@ def delete(args, server):
     print(f'Deleted the {get_hostname(args.site)} {args.equipment_type} {args.name}')
 
 
-def update(args, server):
+def update(args: argparse.Namespace, server: str) -> None:
     """
     Update the specified equipment item by re-scraping the given equipment type.
     """
@@ -109,7 +112,7 @@ def update(args, server):
     print(f'{args.equipment_type.capitalize()} data updated successfully')
 
 
-def get_with_name(args, server):
+def get_with_name(args: argparse.Namespace, server: str) -> None:
     """
     Return all matching equipment items given the name.
     """
@@ -140,17 +143,19 @@ def get_with_name(args, server):
 
         print(f'{args.equipment_type.capitalize()} entry {result[0]['name']} found:')
         print(f'  Current Lowest Price:', best_site['price'])
-        print(f'    Site: {best_site['url']}\n')
-        print(f'  All Time Lowest Price:', result[0]['allTimeLowPrice'])
+        print(f'    Site: {best_site['url']}')
+        print(f'    {turn_red(best_site['is_old'], True)}Last Updated: {best_site['last_updated']}{turn_red(best_site['is_old'], False)}\n')
+
+        print(f'  All Time Lowest Price:', result[0]['all_time_low_price'])
         # print(f'  URL:', result[0]['url'])
         if len(result[0]['entries']) > 1:
             print(f'  Other Sites:')
             for entry in result[0]['entries']:
                 if entry != best_site:
-                    print(f'    {entry['url']} - {entry['price']}')
+                    print(f'    {turn_red(entry['is_old'], True)}{entry['url']} - {entry['price']} - {entry['last_updated']}{turn_red(entry['is_old'], False)}')
 
 
-def get_all(args, server):
+def get_all(args: argparse.Namespace, server: str) -> None:
     """
     Return all equipment items of the given type. Only prints the name.
     """
@@ -171,11 +176,24 @@ def get_all(args, server):
             print(item)
 
 
-def get_hostname(url):
+def get_hostname(url: str) -> str:
     """
     Extract the hostname from the given URL.
     """
     return url.split('www.')[-1].split('.com')[0].split('.org')[0].split('.net')[0]
+
+
+def turn_red(should_be_red: bool, turn_on: bool = True) -> str:
+    """
+    Return the ANSI escape code to turn text red if requested.
+    Otherwise return the reset code, or an empty string if no color 
+    change is needed.
+    """
+    if should_be_red:
+        if turn_on:
+            return RED_CODE
+        return RESET_CODE
+    return ''
 
 
 class Server():
@@ -187,7 +205,7 @@ class Server():
         config.read('clientconfig.ini')
         self.server = config['server']['hostname']
 
-    def get(self):
+    def get(self) -> str:
         """
         Returns the server.
         """
