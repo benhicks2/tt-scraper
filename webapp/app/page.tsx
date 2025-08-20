@@ -1,10 +1,15 @@
 import Item from "@/app/ui/components/item";
+import SearchBar from "./ui/components/searchbar";
 
 export default function Home() {
   return (
     <main className="p-4">
-      <h1 className="text-3xl font-bold">Welcome to My Application</h1>
-      <p className="mt-2">This is the home page content.</p>
+      <h1 className="text-3xl font-bold">Table Tennis Equipment</h1>
+      <SearchBar
+        placeholder="Search items..."
+        onSearch={(query) => console.log("Searching for:", query)}
+        className="mb-4"
+      />
       <Item
         image="/test.jpg"
         title="Sample Item"
