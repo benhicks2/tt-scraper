@@ -125,45 +125,63 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
     """
     Return all matching equipment items given the name.
     """
+    cursor = None
     equipment_type = ROUTE_MAP[args.equipment_type]
-    try:
-        response = requests.get(f'{server}/{equipment_type}', json={'name': args.name})
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as err:
-        raise SystemExit(f'{response.json()['error']}')
-    except requests.exceptions.RequestException as err:
-        raise SystemExit(err)
+    result = []
+    quit = False
 
-    json = response.json()
-    result = json['items']
-    print(json['next'])
+    while not quit:
+        try:
+            response = requests.get(f'{server}/{equipment_type}', json={'name': args.name, 'cursor': cursor})
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            if response.status_code == 404:
+                if cursor:
+                    print(f'No more {equipment_type} found with name "{args.name}"')
+                else:
+                    print(f'No {equipment_type} found with name "{args.name}"')
+                return
+            raise SystemExit(f'{response.json()['error']}')
+        except requests.exceptions.RequestException as err:
+            raise SystemExit(err)
 
-    if len(result) > 1:
-        # If we found multiple items, print their names and lowest prices
-        print(f'Found {len(result)} {equipment_type} matching "{args.name}":')
-        print(f'{'Name':<50} Current Price')
-        for item in result:
-            lowestPrice = min(entry['price'] for entry in item['entries'])
-            print(f'{item['name']:<50} {lowestPrice}')
-    else:
-        # If we only found one item, print its details
-        # Start by getting the site with the lowest price
-        best_site = result[0]['entries'][0]
-        for entry in result[0]['entries']:
-            best_site = entry['price'] if (entry['price'] < best_site['price']) else best_site
+        json = response.json()
+        result = json['items']
+        print(json['next'])
 
-        print(f'{args.equipment_type.capitalize()} entry {result[0]['name']} found:')
-        print(f'  Current Lowest Price:', best_site['price'])
-        print(f'    Site: {best_site['url']}')
-        print(f'    {turn_red(best_site['is_old'], True)}Last Updated: {best_site['last_updated']}{turn_red(best_site['is_old'], False)}\n')
-
-        print(f'  All Time Lowest Price:', result[0]['all_time_low_price'])
-        # print(f'  URL:', result[0]['url'])
-        if len(result[0]['entries']) > 1:
-            print(f'  Other Sites:')
+        if len(result) > 1:
+            # If we found multiple items, print their names and lowest prices
+            print(f'Found {len(result)} {equipment_type} matching "{args.name}":')
+            print(f'{'Name':<50} Current Price')
+            for item in result:
+                lowestPrice = min(entry['price'] for entry in item['entries'])
+                print(f'{item['name']:<50} {lowestPrice}')
+        else:
+            # If we only found one item, print its details
+            # Start by getting the site with the lowest price
+            quit = True
+            best_site = result[0]['entries'][0]
             for entry in result[0]['entries']:
-                if entry != best_site:
-                    print(f'    {turn_red(entry['is_old'], True)}{entry['url']} - {entry['price']} - {entry['last_updated']}{turn_red(entry['is_old'], False)}')
+                best_site = entry['price'] if (entry['price'] < best_site['price']) else best_site
+
+            print(f'{args.equipment_type.capitalize()} entry {result[0]['name']} found:')
+            print(f'  Current Lowest Price:', best_site['price'])
+            print(f'    Site: {best_site['url']}')
+            print(f'    {turn_red(best_site['is_old'], True)}Last Updated: {best_site['last_updated']}{turn_red(best_site['is_old'], False)}\n')
+
+            print(f'  All Time Lowest Price:', result[0]['all_time_low_price'])
+            # print(f'  URL:', result[0]['url'])
+            if len(result[0]['entries']) > 1:
+                print(f'  Other Sites:')
+                for entry in result[0]['entries']:
+                    if entry != best_site:
+                        print(f'    {turn_red(entry['is_old'], True)}{entry['url']} - {entry['price']} - {entry['last_updated']}{turn_red(entry['is_old'], False)}')
+        cursor = json['next'] if 'next' in json else None
+
+        if cursor:
+            user_in = input("Press Enter to get more results, or type 'exit' to quit: ")
+            if user_in.lower() == 'exit':
+                quit = True
 
 
 def get_all(args: argparse.Namespace, server: str) -> None:

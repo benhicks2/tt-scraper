@@ -61,8 +61,11 @@ def get_equipment(equipment_type):
         return jsonify({'error': f'{equipment_type} name is required'}), 400
     equipment_name = data['name'].strip()
 
+    cursor = None
+    if 'cursor' in data:
+        cursor = data['cursor']
+
     # Pagination parameters
-    cursor = request.args.get('cursor')
     search = {'$text': {'$search': equipment_name}}
     if cursor:
         search['_id'] = {'$gt': cursor}
