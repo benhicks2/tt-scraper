@@ -15,6 +15,13 @@ import configparser
 RED_CODE = '\033[0;31m'
 RESET_CODE = '\033[0m'
 
+RUBBER_TYPE = 'rubber'
+BLADE_TYPE = 'blade'
+ROUTE_MAP = {
+    RUBBER_TYPE: 'rubbers',
+    BLADE_TYPE: 'blades'
+}
+
 def main():
     """
     Main function to parse arguments and call the appropriate function.
@@ -29,7 +36,7 @@ def main():
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument('-e', '--equipment-type',
                         required=True,
-                        choices=['rubber', 'blade'],
+                        choices=[RUBBER_TYPE, BLADE_TYPE],
                         help='Type of equipment')
 
     # Each command
@@ -78,6 +85,7 @@ def delete(args: argparse.Namespace, server: str) -> None:
     Delete the given equipment item from the database (will be repopulated on the next scrape).
     """
 
+    equipment_type = ROUTE_MAP[args.equipment_type]
     # Confirm deletion
     print(f'Are you sure you want to delete the {get_hostname(args.site)} {args.equipment_type} {args.name}?')
     confirmation = input('Type "yes" to confirm: ')
@@ -86,7 +94,7 @@ def delete(args: argparse.Namespace, server: str) -> None:
         return
 
     try:
-        response = requests.delete(f'{server}/{args.equipment_type}s',
+        response = requests.delete(f'{server}/{equipment_type}',
                                    json={'name': args.name, 'site': args.site})
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -101,8 +109,9 @@ def update(args: argparse.Namespace, server: str) -> None:
     """
     Update the specified equipment item by re-scraping the given equipment type.
     """
+    equipment_type = ROUTE_MAP[args.equipment_type]
     try:
-        response = requests.put(f'{server}/{args.equipment_type}')
+        response = requests.put(f'{server}/{equipment_type}')
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         raise SystemExit(f'{response.json()["error"]}')
@@ -116,22 +125,24 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
     """
     Return all matching equipment items given the name.
     """
-
+    equipment_type = ROUTE_MAP[args.equipment_type]
     try:
-        response = requests.get(f'{server}/{args.equipment_type}', json={'name': args.name})
+        response = requests.get(f'{server}/{equipment_type}', json={'name': args.name})
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         raise SystemExit(f'{response.json()['error']}')
     except requests.exceptions.RequestException as err:
         raise SystemExit(err)
 
-    result = response.json()
+    json = response.json()
+    result = json['items']
+    print(json['next'])
 
     if len(result) > 1:
         # If we found multiple items, print their names and lowest prices
-        print(f'Found {len(result)} {args.equipment_type}s matching "{args.name}":')
+        print(f'Found {len(result)} {equipment_type} matching "{args.name}":')
         print(f'{'Name':<50} Current Price')
-        for item in response.json():
+        for item in result:
             lowestPrice = min(entry['price'] for entry in item['entries'])
             print(f'{item['name']:<50} {lowestPrice}')
     else:
@@ -159,20 +170,23 @@ def get_all(args: argparse.Namespace, server: str) -> None:
     """
     Return all equipment items of the given type. Only prints the name.
     """
-
+    equipment_type = ROUTE_MAP[args.equipment_type]
     try:
-        response = requests.get(f'{server}/{args.equipment_type}')
+        response = requests.get(f'{server}/{equipment_type}')
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
         raise SystemExit(f'{response.json()["error"]}')
     except requests.exceptions.RequestException as err:
         raise SystemExit(err)
 
-    if not response.json():
-        print(f'No {args.equipment_type}s found')
+    json = response.json()
+
+    if not json:
+        print(f'No {equipment_type} found')
     else:
         print('Name')
-        for item in response.json():
+        print(json['next'])
+        for item in json['items']:
             print(item)
 
 
@@ -186,7 +200,7 @@ def get_hostname(url: str) -> str:
 def turn_red(should_be_red: bool, turn_on: bool = True) -> str:
     """
     Return the ANSI escape code to turn text red if requested.
-    Otherwise return the reset code, or an empty string if no color 
+    Otherwise return the reset code, or an empty string if no color
     change is needed.
     """
     if should_be_red:

@@ -15,7 +15,7 @@ BLADE_ENDPOINT = 'blades'
 RUBBER_ENDPOINT = 'rubbers'
 VALID_EQUIPMENT_TYPES = [BLADE_ENDPOINT, RUBBER_ENDPOINT]
 MONTH_LENGTH = 30
-RETRIEVE_LIMIT = 10
+RETRIEVE_LIMIT = 2
 
 dp = Blueprint('equipment', __name__)
 
@@ -47,23 +47,13 @@ def get_equipment(equipment_type):
 
     items = db[equipment_type]
 
-    # Pagination parameters
-    cursor = request.args.get('cursor')
-    id_val = {}
-    if cursor:
-        try:
-            id_val = {'$gt': ObjectId(cursor)}
-        except Exception:
-            return jsonify({'error': 'Invalid cursor'}), 400
-
     # The user didn't provide an equipment name, so return all distinct names
     if not request.data:
         result = items.distinct('name')
-        return jsonify(result)
-
-    # The user provided an equipment name, so search for it
-    if not request.is_json:
-        return jsonify({'error': 'Invalid JSON'}), 400
+        return jsonify({
+            'items': result,
+            'next': None
+        })
 
     # Validate the input has a 'name' key
     data = request.get_json()
@@ -71,14 +61,29 @@ def get_equipment(equipment_type):
         return jsonify({'error': f'{equipment_type} name is required'}), 400
     equipment_name = data['name'].strip()
 
+    # Pagination parameters
+    cursor = request.args.get('cursor')
+    search = {'$text': {'$search': equipment_name}}
+    if cursor:
+        search['_id'] = {'$gt': cursor}
+
+    # The user provided an equipment name, so search for it
+    if not request.is_json:
+        return jsonify({'error': 'Invalid JSON'}), 400
+
     # Search for the equipment in the database
-    result = items.find({'$text': {'$search': equipment_name}, '_id': id_val}).limit(RETRIEVE_LIMIT).sort('name')
+    print(search)
+    result = list(items.find(search).sort("_id", 1).limit(RETRIEVE_LIMIT))
+
     for equipment in result:
         for entry in equipment['entries']:
             entry['is_old'] = is_month_old(entry['last_updated'])
-    if result.count() > 0:
-        return result
-    return jsonify({'error': f'No {equipment_type} found'}), 404
+    if not result or len(result) == 0:
+        return jsonify({'error': f'No {equipment_type} found'}), 404
+    return jsonify({
+        'items': result,
+        'next': str(result[-1]['_id'])
+    })
 
 
 @dp.route('/<equipment_type>', methods=['DELETE'])
@@ -119,7 +124,7 @@ def update_equipment(equipment_type):
     """
     if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
-    
+
     process = CrawlerProcess(get_project_settings())
 
     if equipment_type == BLADE_ENDPOINT:
