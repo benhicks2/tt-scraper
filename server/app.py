@@ -7,8 +7,10 @@ Description: A Flask REST API server to manage table tennis equipment data store
 Usage: Run the included bash script to start the server.
 """
 from flask import Flask
+from flask_cors import CORS
 
 app = Flask(__name__)
+cors = CORS(app, resources={r'/*': {'origins': 'http://localhost:3000'}})
 
 from routes import equipment
 

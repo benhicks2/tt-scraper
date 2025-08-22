@@ -1,4 +1,5 @@
 from flask import jsonify, request, Blueprint
+from flask_cors import cross_origin
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import configparser
@@ -37,6 +38,7 @@ def get_equipment_options():
 
 
 @dp.route('/<equipment_type>', methods=['GET'])
+@cross_origin()
 def get_equipment(equipment_type):
     """
     Return all matching equipment items given the name.
@@ -49,15 +51,8 @@ def get_equipment(equipment_type):
     cursor = None
 
     # Validate the input has a 'name' key
-    equipment_name = None
-    if request.data:
-        if not request.is_json:
-            return jsonify({'error': 'Invalid JSON in request body'}), 400
-        data = request.get_json()
-        if 'name' in data:
-            equipment_name = data['name'].strip()
-        if 'cursor' in data:
-            cursor = data['cursor']
+    equipment_name = request.args.get('name', None)
+    cursor = request.args.get('cursor', None)
 
     # Pagination parameters
     if equipment_name:
@@ -77,7 +72,7 @@ def get_equipment(equipment_type):
             entry['is_old'] = is_month_old(entry['last_updated'])
     return jsonify({
         'items': result,
-        'next': str(result[-1]['_id'])
+        'next': str(result[-1]['_id']) if len(result) == RETRIEVE_LIMIT else "null"
     })
 
 

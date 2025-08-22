@@ -132,7 +132,7 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
 
     while not quit:
         try:
-            response = requests.get(f'{server}/{equipment_type}', json={'name': args.name, 'cursor': cursor})
+            response = requests.get(f'{server}/{equipment_type}?name={args.name}&cursor={cursor}')
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:
@@ -190,7 +190,7 @@ def get_all(args: argparse.Namespace, server: str) -> None:
 
     while not quit:
         try:
-            response = requests.get(f'{server}/{equipment_type}', json={'cursor': cursor})
+            response = requests.get(f'{server}/{equipment_type}?cursor={cursor}')
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:

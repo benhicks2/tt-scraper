@@ -1,6 +1,8 @@
+"use client";
 import Item from "@/app/ui/components/item";
 import SearchBar from "./ui/components/searchbar";
 import { StringUtils } from "@/lib/stringutils";
+import React from "react";
 
 type EquipmentItem = {
   _id: string;
@@ -13,13 +15,33 @@ type EquipmentItem = {
   }>;
 };
 
-async function loadMore() {
+export default function Home() {
+  const [items, setItems] = React.useState<EquipmentItem[]>([]);
+  const [cursor, setCursor] = React.useState<string | null>(null);
+  const [hasMore, setHasMore] = React.useState<boolean>(true);
 
-}
+  React.useEffect(() => {
+    loadMore();
+  }, []);
 
-export default async function Home() {
-  const data = await fetch("http://127.0.0.1:5000/rubbers");
-  const equipment = await data.json();
+  async function loadMore() {
+    const response = await fetch(`http://127.0.0.1:5000/rubbers${cursor ? `?cursor=${cursor}` : ''}`);
+    const data = await response.json();
+    if (response.status == 404) {
+      setHasMore(false);
+      setCursor(null);
+    }
+    else {
+      setItems((prevItems) => [...prevItems, ...data.items]);
+      if (data.next == "null") {
+        setHasMore(false);
+        setCursor(null);
+      }
+      else {
+        setCursor(data.next);
+      }
+    }
+  }
 
   return (
     <main className="p-4">
@@ -30,7 +52,7 @@ export default async function Home() {
         className="mb-4"
       />
       <div className="flex flex-wrap gap-4">
-        {equipment['items'].map((item: EquipmentItem) => (
+        {items.map((item: EquipmentItem) => (
           <Item
             key={item._id}
             image={"/test.jpg"}
@@ -40,7 +62,7 @@ export default async function Home() {
           />
         ))}
       </div>
-      {/* <button onClick={loadMore}>Load More</button> */}
+      {hasMore && (<button onClick={loadMore}>Load More</button>)}
     </main>
   );
 }
