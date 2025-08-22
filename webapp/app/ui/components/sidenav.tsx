@@ -4,17 +4,17 @@ export default function SideNav() {
       <h2 className="text-xl font-bold">My Application Sidebar</h2>
       <ul className="mt-4 space-y-2">
         <li>
-          <a href="#" className="hover:underline">
+          <a href="/ttscraper" className="hover:underline">
             Home
           </a>
         </li>
         <li>
-          <a href="/rubbers" className="hover:underline">
+          <a href="/ttscraper/rubbers" className="hover:underline">
             Rubbers
           </a>
         </li>
         <li>
-          <a href="/blades" className="hover:underline">
+          <a href="/ttscraper/blades" className="hover:underline">
             Blades
           </a>
         </li>

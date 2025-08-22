@@ -1,9 +1,10 @@
-"use client";
-import SearchBar from "./ui/components/searchbar";
-import { StringUtils } from "@/app/_lib/stringutils";
-import React from "react";
+import SearchBar from "@/app/ui/components/searchbar";
 
-export default function Home() {
+export default function EquipmentLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
 
   return (
     <main className="p-4">
@@ -13,7 +14,7 @@ export default function Home() {
         onSearch={(query) => console.log("Searching for:", query)}
         className="mb-4"
       />
-      <p>Hello</p>
+      {children}
     </main>
-  );
+  )
 }

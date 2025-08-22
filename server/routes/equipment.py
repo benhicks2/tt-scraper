@@ -62,6 +62,8 @@ def get_equipment(equipment_type):
     if cursor:
         search['_id'] = {'$gt': cursor}
 
+    from time import sleep
+    sleep(5)
     # Search for the equipment in the database
     result = list(items.find(search).sort("_id", 1).limit(RETRIEVE_LIMIT))
 
