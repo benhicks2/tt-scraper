@@ -147,7 +147,6 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
 
         json = response.json()
         result = json['items']
-        print(json['next'])
 
         if len(result) > 1:
             # If we found multiple items, print their names and lowest prices
@@ -156,6 +155,9 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
             for item in result:
                 lowestPrice = min(entry['price'] for entry in item['entries'])
                 print(f'{item['name']:<50} {lowestPrice}')
+
+            cursor = json['next'] if 'next' in json else None
+            quit = handle_cursor(cursor)
         else:
             # If we only found one item, print its details
             # Start by getting the site with the lowest price
@@ -176,12 +178,6 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
                 for entry in result[0]['entries']:
                     if entry != best_site:
                         print(f'    {turn_red(entry['is_old'], True)}{entry['url']} - {entry['price']} - {entry['last_updated']}{turn_red(entry['is_old'], False)}')
-        cursor = json['next'] if 'next' in json else None
-
-        if cursor:
-            user_in = input("Press Enter to get more results, or type 'exit' to quit: ")
-            if user_in.lower() == 'exit':
-                quit = True
 
 
 def get_all(args: argparse.Namespace, server: str) -> None:
@@ -189,23 +185,35 @@ def get_all(args: argparse.Namespace, server: str) -> None:
     Return all equipment items of the given type. Only prints the name.
     """
     equipment_type = ROUTE_MAP[args.equipment_type]
-    try:
-        response = requests.get(f'{server}/{equipment_type}')
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as err:
-        raise SystemExit(f'{response.json()["error"]}')
-    except requests.exceptions.RequestException as err:
-        raise SystemExit(err)
+    quit = False
+    cursor = None
 
-    json = response.json()
+    while not quit:
+        try:
+            response = requests.get(f'{server}/{equipment_type}', json={'cursor': cursor})
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            if response.status_code == 404:
+                if cursor:
+                    print(f'No more {equipment_type} found')
+                else:
+                    print(f'No {equipment_type} found')
+                return
+            raise SystemExit(f'{response.json()["error"]}')
+        except requests.exceptions.RequestException as err:
+            raise SystemExit(err)
 
-    if not json:
-        print(f'No {equipment_type} found')
-    else:
-        print('Name')
-        print(json['next'])
-        for item in json['items']:
-            print(item)
+        json = response.json()
+
+        if not json:
+            print(f'No {equipment_type} found')
+        else:
+            print('Name')
+            for item in json['items']:
+                print(item['name'])
+
+        cursor = json['next'] if 'next' in json else None
+        quit = handle_cursor(cursor)
 
 
 def get_hostname(url: str) -> str:
@@ -213,6 +221,20 @@ def get_hostname(url: str) -> str:
     Extract the hostname from the given URL.
     """
     return url.split('www.')[-1].split('.com')[0].split('.org')[0].split('.net')[0]
+
+
+def handle_cursor(cursor: str) -> bool:
+    """
+    Handle pagination by asking the user if they want to continue.
+    """
+    if cursor:
+        try:
+            user_in = input("Press Enter to get more results, or type 'exit' to quit: ")
+            return user_in.lower() == 'exit'
+        except KeyboardInterrupt:
+            print('\n')
+            return True
+    return True
 
 
 def turn_red(should_be_red: bool, turn_on: bool = True) -> str:

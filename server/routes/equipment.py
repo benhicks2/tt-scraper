@@ -15,7 +15,7 @@ BLADE_ENDPOINT = 'blades'
 RUBBER_ENDPOINT = 'rubbers'
 VALID_EQUIPMENT_TYPES = [BLADE_ENDPOINT, RUBBER_ENDPOINT]
 MONTH_LENGTH = 30
-RETRIEVE_LIMIT = 2
+RETRIEVE_LIMIT = 10
 
 dp = Blueprint('equipment', __name__)
 
@@ -46,43 +46,35 @@ def get_equipment(equipment_type):
         return jsonify({'error': 'Invalid equipment type'}), 400
 
     items = db[equipment_type]
-
-    # The user didn't provide an equipment name, so return all distinct names
-    if not request.data:
-        result = items.distinct('name')
-        return jsonify({
-            'items': result,
-            'next': None
-        })
+    cursor = None
 
     # Validate the input has a 'name' key
-    data = request.get_json()
-    if not data or 'name' not in data:
-        return jsonify({'error': f'{equipment_type} name is required'}), 400
-    equipment_name = data['name'].strip()
-
-    cursor = None
-    if 'cursor' in data:
-        cursor = data['cursor']
+    equipment_name = None
+    if request.data:
+        if not request.is_json:
+            return jsonify({'error': 'Invalid JSON in request body'}), 400
+        data = request.get_json()
+        if 'name' in data:
+            equipment_name = data['name'].strip()
+        if 'cursor' in data:
+            cursor = data['cursor']
 
     # Pagination parameters
-    search = {'$text': {'$search': equipment_name}}
+    if equipment_name:
+        search = {'$text': {'$search': equipment_name}}
+    else:
+        search = {}
     if cursor:
         search['_id'] = {'$gt': cursor}
 
-    # The user provided an equipment name, so search for it
-    if not request.is_json:
-        return jsonify({'error': 'Invalid JSON'}), 400
-
     # Search for the equipment in the database
-    print(search)
     result = list(items.find(search).sort("_id", 1).limit(RETRIEVE_LIMIT))
 
-    for equipment in result:
-        for entry in equipment['entries']:
-            entry['is_old'] = is_month_old(entry['last_updated'])
     if not result or len(result) == 0:
         return jsonify({'error': f'No {equipment_type} found'}), 404
+    if len(result) == 1:
+        for entry in result[0]['entries']:
+            entry['is_old'] = is_month_old(entry['last_updated'])
     return jsonify({
         'items': result,
         'next': str(result[-1]['_id'])
