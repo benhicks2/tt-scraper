@@ -1,5 +1,6 @@
 from flask import jsonify, request, Blueprint
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 import configparser
 import datetime
 
@@ -10,8 +11,11 @@ from equipment_scraper.spiders.rubber_megaspin import RubberSpiderMegaspin
 from equipment_scraper.spiders.blade_tt11 import BladeSpiderTT11
 from equipment_scraper.spiders.rubber_tt11 import RubberSpiderTT11
 
-VALID_EQUIPMENT_TYPES = ['blade', 'rubber']
+BLADE_ENDPOINT = 'blades'
+RUBBER_ENDPOINT = 'rubbers'
+VALID_EQUIPMENT_TYPES = [BLADE_ENDPOINT, RUBBER_ENDPOINT]
 MONTH_LENGTH = 30
+RETRIEVE_LIMIT = 10
 
 dp = Blueprint('equipment', __name__)
 
@@ -20,6 +24,9 @@ config.read('config.ini')
 
 client = MongoClient(config['database']['host'], config['database'].getint('port'))
 db = client[config['database']['db_name']]
+
+db[BLADE_ENDPOINT].create_index([('name', 'text')])
+db[RUBBER_ENDPOINT].create_index([('name', 'text')])
 
 @dp.route('/equipment', methods=['GET'])
 def get_equipment_options():
@@ -35,38 +42,43 @@ def get_equipment(equipment_type):
     Return all matching equipment items given the name.
     If no name is provided, return all items of the given type.
     """
-    collection_name = equipment_type + 's'
-    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (collection_name not in db.list_collection_names()):
+    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
 
-    items = db[f'{equipment_type}s']
-
-    # The user didn't provide an equipment name, so return all distinct names
-    if not request.data:
-        result = items.distinct('name')
-        return jsonify(result)
-
-    # The user provided an equipment name, so search for it
-    if not request.is_json:
-        return jsonify({'error': 'Invalid JSON'}), 400
+    items = db[equipment_type]
+    cursor = None
 
     # Validate the input has a 'name' key
-    data = request.get_json()
-    if not data or 'name' not in data:
-        return jsonify({'error': f'{equipment_type} name is required'}), 400
-    equipment_name = data['name'].strip()
+    equipment_name = None
+    if request.data:
+        if not request.is_json:
+            return jsonify({'error': 'Invalid JSON in request body'}), 400
+        data = request.get_json()
+        if 'name' in data:
+            equipment_name = data['name'].strip()
+        if 'cursor' in data:
+            cursor = data['cursor']
+
+    # Pagination parameters
+    if equipment_name:
+        search = {'$text': {'$search': equipment_name}}
+    else:
+        search = {}
+    if cursor:
+        search['_id'] = {'$gt': cursor}
 
     # Search for the equipment in the database
-    result = items.find().sort('name')
-    output = []
-    for equipment in result:
-        if equipment_name.casefold() in equipment['name'].casefold():
-            for entry in equipment['entries']:
-                entry['is_old'] = is_month_old(entry['last_updated'])
-            output.append(equipment)
-    if output:
-        return jsonify(output)
-    return jsonify({'error': f'No {equipment_type}s found'}), 404
+    result = list(items.find(search).sort("_id", 1).limit(RETRIEVE_LIMIT))
+
+    if not result or len(result) == 0:
+        return jsonify({'error': f'No {equipment_type} found'}), 404
+    if len(result) == 1:
+        for entry in result[0]['entries']:
+            entry['is_old'] = is_month_old(entry['last_updated'])
+    return jsonify({
+        'items': result,
+        'next': str(result[-1]['_id'])
+    })
 
 
 @dp.route('/<equipment_type>', methods=['DELETE'])
@@ -74,8 +86,7 @@ def delete_equipment(equipment_type):
     """
     Delete the specified equipment item.
     """
-    collection_name = equipment_type + 's'
-    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (collection_name not in db.list_collection_names()):
+    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
 
     data = request.get_json()
@@ -90,15 +101,15 @@ def delete_equipment(equipment_type):
     # Check if the equipment item exists, and there's only one match
     num_matches = collection.count_documents({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})
     if num_matches == 0:
-        return jsonify({'error': f'No matches found for the {equipment_type} "{name}" at "{site}"'}), 404
+        return jsonify({'error': f'No matches found for the {equipment_type[:-1]} "{name}" at "{site}"'}), 404
     if num_matches > 1:
-        return jsonify({'error': f'Multiple matches found for the {equipment_type} "{name}" at "{site}"'}), 400
+        return jsonify({'error': f'Multiple matches found for the {equipment_type[:-1]} "{name}" at "{site}"'}), 400
 
     # Delete the equipment item
     result = collection.delete_one({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})
     if result.deleted_count > 0:
         return jsonify({'status': 'success'}), 200
-    return jsonify({'error': f'Unable to delete the {equipment_type} "{name}" at "{site}"'}), 404
+    return jsonify({'error': f'Unable to delete the {equipment_type[:-1]} "{name}" at "{site}"'}), 404
 
 
 @dp.route('/<equipment_type>', methods=['PUT'])
@@ -106,16 +117,15 @@ def update_equipment(equipment_type):
     """
     Update the specified equipment item.
     """
-    collection_name = equipment_type + 's'
-    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (collection_name not in db.list_collection_names()):
+    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
-    
+
     process = CrawlerProcess(get_project_settings())
 
-    if equipment_type == 'blade':
+    if equipment_type == BLADE_ENDPOINT:
         process.crawl(BladeSpiderMegaspin)
         # process.crawl(BladeSpiderTT11)
-    elif equipment_type == 'rubber':
+    elif equipment_type == RUBBER_ENDPOINT:
         process.crawl(RubberSpiderMegaspin)
         # process.crawl(RubberSpiderTT11)
     process.start(stop_after_crawl=True)
