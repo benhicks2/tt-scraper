@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { StringUtils } from "@/app/_lib/stringutils";
@@ -41,6 +42,23 @@ export function ItemList({ items, loading }: { items: EquipmentItem[], loading: 
         />
       ))}
       {loading && ItemListLoading()}
+    </div>
+  );
+}
+
+export function ItemDescription({ item }: { item: EquipmentItem }) {
+  return (
+    <div>
+      <h2>{item.name}</h2>
+      <p>All Time Low Price: ${item.all_time_low_price}</p>
+      <h3>Price History:</h3>
+      <ul>
+        {item.entries.map((entry) => (
+          <li key={entry.url}>
+            {entry.last_updated}: ${entry.price}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

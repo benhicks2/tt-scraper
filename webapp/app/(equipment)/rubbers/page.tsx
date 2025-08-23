@@ -37,6 +37,12 @@ export default function Page() {
 
   return (
     <div>
+      <h1 className="text-3xl font-bold">Table Tennis Rubbers</h1>
+      <SearchBar
+        placeholder="Search items..."
+        onSearch={(query) => console.log("Searching for:", query)}
+        className="mb-4"
+      />
       <ItemList items={items} loading={loading}/>
       {hasMore && (<button disabled={loading} onClick={loadMore}>Load More</button>)}
     </div>

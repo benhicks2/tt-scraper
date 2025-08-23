@@ -37,6 +37,21 @@ def get_equipment_options():
     return jsonify(db.list_collection_names())
 
 
+@dp.route('/<equipment_type>/<id>', methods=['GET'])
+@cross_origin()
+def get_equipment_item(equipment_type, id):
+    """
+    Return a specific equipment item by ID.
+    """
+    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
+        return jsonify({'error': 'Invalid equipment type'}), 400
+
+    item = db[equipment_type].find_one({'_id': id})
+    if not item:
+        return jsonify({'error': f'No {equipment_type[:-1]} found with ID {id}'}), 404
+    return jsonify(item)
+
+
 @dp.route('/<equipment_type>', methods=['GET'])
 @cross_origin()
 def get_equipment(equipment_type):
@@ -62,8 +77,6 @@ def get_equipment(equipment_type):
     if cursor:
         search['_id'] = {'$gt': cursor}
 
-    from time import sleep
-    sleep(5)
     # Search for the equipment in the database
     result = list(items.find(search).sort("_id", 1).limit(RETRIEVE_LIMIT))
 
