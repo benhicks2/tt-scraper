@@ -125,18 +125,18 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
     """
     Return all matching equipment items given the name.
     """
-    cursor = None
+    page = 1
     equipment_type = ROUTE_MAP[args.equipment_type]
     result = []
     quit = False
 
     while not quit:
         try:
-            response = requests.get(f'{server}/{equipment_type}?name={args.name}&cursor={cursor}')
+            response = requests.get(f'{server}/{equipment_type}?name={args.name}&page={page}')
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:
-                if cursor:
+                if page > 1:
                     print(f'No more {equipment_type} found with name "{args.name}"')
                 else:
                     print(f'No {equipment_type} found with name "{args.name}"')
@@ -148,7 +148,7 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
         json = response.json()
         result = json['items']
 
-        if len(result) > 1:
+        if len(result) > 1 or page > 1:
             # If we found multiple items, print their names and lowest prices
             print(f'Found {len(result)} {equipment_type} matching "{args.name}":')
             print(f'{'Name':<50} Current Price')
@@ -156,8 +156,8 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
                 lowestPrice = min(entry['price'] for entry in item['entries'])
                 print(f'{item['name']:<50} {lowestPrice}')
 
-            cursor = json['next'] if 'next' in json else None
-            quit = handle_cursor(cursor)
+            quit = handle_page()
+            page += 1
         else:
             # If we only found one item, print its details
             # Start by getting the site with the lowest price
@@ -186,15 +186,15 @@ def get_all(args: argparse.Namespace, server: str) -> None:
     """
     equipment_type = ROUTE_MAP[args.equipment_type]
     quit = False
-    cursor = None
+    page = 1
 
     while not quit:
         try:
-            response = requests.get(f'{server}/{equipment_type}?cursor={cursor}')
+            response = requests.get(f'{server}/{equipment_type}?page={page}')
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:
-                if cursor:
+                if page > 1:
                     print(f'No more {equipment_type} found')
                 else:
                     print(f'No {equipment_type} found')
@@ -212,8 +212,8 @@ def get_all(args: argparse.Namespace, server: str) -> None:
             for item in json['items']:
                 print(item['name'])
 
-        cursor = json['next'] if 'next' in json else None
-        quit = handle_cursor(cursor)
+        quit = handle_page()
+        page += 1
 
 
 def get_hostname(url: str) -> str:
@@ -223,18 +223,16 @@ def get_hostname(url: str) -> str:
     return url.split('www.')[-1].split('.com')[0].split('.org')[0].split('.net')[0]
 
 
-def handle_cursor(cursor: str) -> bool:
+def handle_page() -> bool:
     """
     Handle pagination by asking the user if they want to continue.
     """
-    if cursor:
-        try:
-            user_in = input("Press Enter to get more results, or type 'exit' to quit: ")
-            return user_in.lower() == 'exit'
-        except KeyboardInterrupt:
-            print('\n')
-            return True
-    return True
+    try:
+        user_in = input("Press Enter to get more results, or type 'exit' to quit: ")
+        return user_in.lower() == 'exit'
+    except KeyboardInterrupt:
+        print('\n')
+        return True
 
 
 def turn_red(should_be_red: bool, turn_on: bool = True) -> str:

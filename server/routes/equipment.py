@@ -56,8 +56,8 @@ def get_equipment_item(equipment_type, id):
 @cross_origin()
 def get_equipment(equipment_type):
     """
-    Return all matching equipment items given the name.
-    If no name is provided, return all items of the given type.
+    Return all matching equipment items given the name, up to
+    RETRIEVE_LIMIT items.
     """
     if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
@@ -67,18 +67,28 @@ def get_equipment(equipment_type):
 
     # Validate the input has a 'name' key
     equipment_name = request.args.get('name', None)
-    cursor = request.args.get('cursor', None)
+    page_str = request.args.get('page', '1')
+    page = 1
+    try:
+        page = int(page_str)
+    except ValueError:
+        return jsonify({'error': 'Invalid page number'}), 400
+
+    # cursor = request.args.get('cursor', None)
 
     # Pagination parameters
     if equipment_name:
         search = {'$text': {'$search': equipment_name}}
     else:
         search = {}
-    if cursor:
-        search['_id'] = {'$gt': cursor}
+    # if cursor:
+    #     search['_id'] = {'$gt': cursor}
 
     # Search for the equipment in the database
-    result = list(items.find(search).sort("_id", 1).limit(RETRIEVE_LIMIT))
+    result = list(items.find(search)
+                       .sort("_id", 1)
+                       .skip((page - 1) * RETRIEVE_LIMIT)
+                       .limit(RETRIEVE_LIMIT))
 
     if not result or len(result) == 0:
         return jsonify({'error': f'No {equipment_type} found'}), 404

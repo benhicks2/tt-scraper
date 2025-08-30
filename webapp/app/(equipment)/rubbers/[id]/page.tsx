@@ -10,7 +10,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   return (
     <div>
-      <h1>Rubber Item Details</h1>
       <ItemDescription item={data} />
     </div>
   );
