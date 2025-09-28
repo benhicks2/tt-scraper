@@ -2,7 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  basePath: "/ttscraper"
+  basePath: "/ttscraper",
+  reactStrictMode: false
 };
 
 export default nextConfig;
