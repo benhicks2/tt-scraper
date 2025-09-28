@@ -32,15 +32,19 @@ export function Item({image, title, price, slug}: {image: string, title: string,
 export function ItemList({ items, loading }: { items: EquipmentItem[], loading: boolean }) {
   return (
     <div className="flex flex-wrap gap-4">
-      {items.map((item) => (
+      {items.length === 0 ? (
+      <div className="text-lg">No results</div>
+      ) : (
+      items.map((item) => (
         <Item
-          key={item._id}
-          image={"/test.jpg"}
-          title={StringUtils.truncate(item.name, 50)}
-          price={item.entries[0].price}
-          slug={`/rubbers/${item._id}`}
+        key={item._id}
+        image={"/test.jpg"}
+        title={StringUtils.truncate(item.name, 50)}
+        price={item.entries[0].price}
+        slug={`/rubbers/${item._id}`}
         />
-      ))}
+      ))
+      )}
       {loading && ItemListLoading()}
     </div>
   );
