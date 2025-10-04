@@ -63,7 +63,6 @@ def get_equipment(equipment_type):
         return jsonify({'error': 'Invalid equipment type'}), 400
 
     items = db[equipment_type]
-    cursor = None
 
     # Validate the input has a 'name' key
     equipment_name = request.args.get('name', None)
@@ -74,24 +73,24 @@ def get_equipment(equipment_type):
     except ValueError:
         return jsonify({'error': 'Invalid page number'}), 400
 
-    # cursor = request.args.get('cursor', None)
-
-    # Pagination parameters
+    # Search for the equipment items
+    result = []
     if equipment_name:
-        search = {'$text': {'$search': equipment_name}}
+        result = list(items.find({'$text': {'$search': equipment_name}},
+                                 {'score': {'$meta': 'textScore'}})
+                           .sort([('score', {'$meta': 'textScore'})])
+                           .skip((page - 1) * RETRIEVE_LIMIT)
+                           .limit(RETRIEVE_LIMIT))
     else:
-        search = {}
-    # if cursor:
-    #     search['_id'] = {'$gt': cursor}
+        result = list(items.find({})
+                           .skip((page - 1) * RETRIEVE_LIMIT)
+                           .limit(RETRIEVE_LIMIT))
 
-    # Search for the equipment in the database
-    result = list(items.find(search)
-                       .sort("_id", 1)
-                       .skip((page - 1) * RETRIEVE_LIMIT)
-                       .limit(RETRIEVE_LIMIT))
 
     if not result or len(result) == 0:
         return jsonify({'error': f'No {equipment_type} found'}), 404
+    if equipment_name and result[0]['name'].lower() == equipment_name.lower():
+        result = [result[0]]
     if len(result) == 1:
         for entry in result[0]['entries']:
             entry['is_old'] = is_month_old(entry['last_updated'])
@@ -144,10 +143,10 @@ def update_equipment(equipment_type):
 
     if equipment_type == BLADE_ENDPOINT:
         process.crawl(BladeSpiderMegaspin)
-        # process.crawl(BladeSpiderTT11)
+        process.crawl(BladeSpiderTT11)
     elif equipment_type == RUBBER_ENDPOINT:
         process.crawl(RubberSpiderMegaspin)
-        # process.crawl(RubberSpiderTT11)
+        process.crawl(RubberSpiderTT11)
     process.start(stop_after_crawl=True)
     # TODO: Add a websocket so we can continuously update the status
     process.stop()

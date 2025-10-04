@@ -7,7 +7,7 @@ export default function EquipmentLayout({
 }>) {
 
   return (
-    <main className="p-4">
+    <main>
       {children}
     </main>
   )

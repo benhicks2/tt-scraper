@@ -1,4 +1,5 @@
 import { ItemDescription } from "@/app/ui/components/item";
+import { DetailPageWrapper } from "./detail-page-wrapper";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -9,8 +10,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const data = await response.json();
 
   return (
-    <div>
+    <DetailPageWrapper>
       <ItemDescription item={data} />
-    </div>
+    </DetailPageWrapper>
   );
 }

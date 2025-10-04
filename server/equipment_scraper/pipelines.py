@@ -50,10 +50,11 @@ class MongoPipeline:
 
         # Try to update the item in the database if it exists
         result = self.db[self.COLLECTION_NAME].update_one(
-            filter={'_id': item_id, 'entries._id': site_entry._id},
+            filter={'_id': item_id},
             update={'$set': {'entries.$[elem].price': site_entry.price}},
             array_filters=[{'elem._id': site_entry._id}]
         )
+        logging.info('Update result: %s', result.raw_result)
 
         # If no items were matched, insert a new array entry
         if result.matched_count == 0:
