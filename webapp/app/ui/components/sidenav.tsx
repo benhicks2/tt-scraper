@@ -33,15 +33,6 @@ export default function SideNav() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       )
-    },
-    {
-      name: 'Balls',
-      href: '/balls',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
-        </svg>
-      )
     }
   ];
 
@@ -73,13 +64,6 @@ export default function SideNav() {
                 );
               })}
             </ul>
-          </div>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="text-xs text-gray-500 text-center">
-              Table Tennis Equipment Tracker
-            </div>
           </div>
         </div>
       </nav>

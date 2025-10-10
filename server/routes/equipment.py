@@ -30,11 +30,49 @@ db[BLADE_ENDPOINT].create_index([('name', 'text')])
 db[RUBBER_ENDPOINT].create_index([('name', 'text')])
 
 @dp.route('/equipment', methods=['GET'])
-def get_equipment_options():
+@cross_origin()
+def get_all_equipment():
     """
-    Return all available equipment types.
+    Return all matching equipment items given the name, up to
+    RETRIEVE_LIMIT items. All matching equipment types are returned.
     """
-    return jsonify(db.list_collection_names())
+    items = db[BLADE_ENDPOINT]
+    items.extend(db[RUBBER_ENDPOINT])
+
+    # Validate the input has a 'name' key
+    equipment_name = request.args.get('name', None)
+    page_str = request.args.get('page', '1')
+    page = 1
+    try:
+        page = int(page_str)
+    except ValueError:
+        return jsonify({'error': 'Invalid page number'}), 400
+
+    # Search for the equipment items
+    result = []
+    if equipment_name:
+        result = list(items.find({'$text': {'$search': equipment_name}},
+                                 {'score': {'$meta': 'textScore'}})
+                           .sort([('score', {'$meta': 'textScore'})])
+                           .skip((page - 1) * RETRIEVE_LIMIT)
+                           .limit(RETRIEVE_LIMIT))
+    else:
+        result = list(items.find({})
+                           .skip((page - 1) * RETRIEVE_LIMIT)
+                           .limit(RETRIEVE_LIMIT))
+
+
+    if not result or len(result) == 0:
+        return jsonify({'error': f'No equipment found'}), 404
+    if equipment_name and result[0]['name'].lower() == equipment_name.lower():
+        result = [result[0]]
+    if len(result) == 1:
+        for entry in result[0]['entries']:
+            entry['is_old'] = is_month_old(entry['last_updated'])
+    return jsonify({
+        'items': result,
+        'next': str(result[-1]['_id']) if len(result) == RETRIEVE_LIMIT else "null"
+    })
 
 
 @dp.route('/<equipment_type>/<id>', methods=['GET'])

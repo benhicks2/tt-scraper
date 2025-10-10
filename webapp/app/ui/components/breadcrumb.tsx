@@ -52,9 +52,18 @@ export const breadcrumbConfigs = {
     { label: "Home", href: "/" },
     { label: "Rubbers", current: true }
   ],
+  blades: [
+    { label: "Home", href: "/" },
+    { label: "Blades", current: true }
+  ],
   rubberDetails: (rubberName: string, rubberId: string) => [
     { label: "Home", href: "/" },
     { label: "Rubbers", href: "/rubbers" },
     { label: rubberName, current: true }
+  ],
+  bladeDetails: (bladeName: string, bladeId: string) => [
+    { label: "Home", href: "/" },
+    { label: "Blades", href: "/blades" },
+    { label: bladeName, current: true }
   ]
 };

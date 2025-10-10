@@ -17,8 +17,21 @@ export type EquipmentItem = {
 };
 
 export function Item({image, title, price, slug}: {image: string, title: string, price: string, slug: string}) {
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      window.location.href = slug;
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105 border border-gray-200 overflow-hidden group">
+    <Link
+      href={slug}
+      className="block bg-white rounded-lg shadow-md hover:bg-gray-50 hover:shadow-lg transition-all duration-200 border border-gray-200 overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      tabIndex={0}
+      aria-label={`View details for ${title}`}
+      onKeyDown={handleKeyDown}
+    >
       {/* Card Image Placeholder */}
       <div className="h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
         <div className="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center">
@@ -30,38 +43,38 @@ export function Item({image, title, price, slug}: {image: string, title: string,
 
       {/* Card Content */}
       <div className="p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">
+        <h3 className="text-lg font-medium text-gray-900 mb-2 line-clamp-2">
           {title}
         </h3>
         <p className="text-2xl font-bold text-blue-600 mb-4">
           {price}
         </p>
-        <Link
-          href={slug}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md"
-        >
+        <div className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600">
           View Details
           <svg className="ml-2 -mr-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
-        </Link>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
-export function ItemList({ items, loading, numLoadingItems }: { items: EquipmentItem[], loading: boolean, numLoadingItems?: number }) {
+export function ItemList({ items, loading, numLoadingItems, equipmentType }: { items: EquipmentItem[], loading: boolean, numLoadingItems?: number, equipmentType: 'rubbers' | 'blades' }) {
+  const getEmptyStateMessage = (type: 'rubbers' | 'blades') => {
+    return type === 'rubbers' ? 'No rubbers found' : 'No blades found';
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {items.map((item) => (
-        <div key={item._id}>
-          <Item
-            image={"/test.jpg"}
-            title={StringUtils.truncate(item.name, 50)}
-            price={item.entries[0].price}
-            slug={`/rubbers/${item._id}`}
-          />
-        </div>
+        <Item
+          key={item._id}
+          image={"/test.jpg"}
+          title={StringUtils.truncate(item.name, 50)}
+          price={item.entries[0].price}
+          slug={`/${equipmentType}/${item._id}`}
+        />
       ))}
       {!loading && items.length === 0 ? (
         <div className="col-span-full flex flex-col items-center justify-center py-12">
@@ -70,7 +83,7 @@ export function ItemList({ items, loading, numLoadingItems }: { items: Equipment
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No rubbers found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{getEmptyStateMessage(equipmentType)}</h3>
           <p className="text-gray-500">Try adjusting your search criteria</p>
         </div>
       ) : (
