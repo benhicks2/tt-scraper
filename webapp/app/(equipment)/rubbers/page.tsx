@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { ItemList, EquipmentItem } from "@/app/ui/components/item";
 import SearchBar from "@/app/ui/components/searchbar";
+import Breadcrumb, { breadcrumbConfigs } from "@/app/ui/components/breadcrumb";
 
 function RubbersPageContent() {
   const [items, setItems] = useState<EquipmentItem[]>([]);
@@ -13,45 +14,6 @@ function RubbersPageContent() {
   const { replace } = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-
-  // Restore scroll position only when coming back from detail page
-  // useEffect(() => {
-  //   const navigationType = sessionStorage.getItem('navigation-type');
-  //   const savedScrollPosition = sessionStorage.getItem('rubbers-scroll-position');
-
-  //   if (navigationType === 'detail-to-list' && savedScrollPosition) {
-  //     const scrollPosition = parseInt(savedScrollPosition, 10);
-  //     setTimeout(() => {
-  //       window.scrollTo(0, scrollPosition);
-  //     }, 100);
-  //   } else {
-  //     // Reset scroll position for other navigation types
-  //     window.scrollTo(0, 0);
-  //   }
-
-  //   // Clear the navigation type after handling
-  //   sessionStorage.removeItem('navigation-type');
-  // }, []);
-
-  // // Save scroll position and navigation type when navigating to detail page
-  // useEffect(() => {
-  //   const handleLinkClick = (event: MouseEvent) => {
-  //     const target = event.target as HTMLElement;
-  //     const link = target.closest('a[href*="/rubbers/"]');
-
-  //     if (link) {
-  //       sessionStorage.setItem('rubbers-scroll-position', window.scrollY.toString());
-  //       sessionStorage.setItem('navigation-type', 'list-to-detail');
-  //     }
-  //   };
-
-  //   // Listen for clicks on detail page links
-  //   document.addEventListener('click', handleLinkClick);
-
-  //   return () => {
-  //     document.removeEventListener('click', handleLinkClick);
-  //   };
-  // }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -132,6 +94,11 @@ function RubbersPageContent() {
       {/* Material Design Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-4">
+            <Breadcrumb items={breadcrumbConfigs.rubbers} />
+          </div>
+
           <h1 className="text-3xl font-medium text-gray-900 mb-6">
             Table Tennis Rubbers
           </h1>
@@ -144,7 +111,7 @@ function RubbersPageContent() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ItemList items={items} loading={loading}/>
+        <ItemList items={items} loading={loading} numLoadingItems={page * 10} />
 
         {/* Load More Button with Material Design */}
         {hasMore && (

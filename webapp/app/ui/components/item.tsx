@@ -3,6 +3,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { StringUtils } from "@/app/_lib/stringutils";
+import Breadcrumb, { breadcrumbConfigs } from "@/app/ui/components/breadcrumb";
 
 export type EquipmentItem = {
   _id: string;
@@ -33,7 +34,7 @@ export function Item({image, title, price, slug}: {image: string, title: string,
           {title}
         </h3>
         <p className="text-2xl font-bold text-blue-600 mb-4">
-          ${price}
+          {price}
         </p>
         <Link
           href={slug}
@@ -49,7 +50,7 @@ export function Item({image, title, price, slug}: {image: string, title: string,
   );
 }
 
-export function ItemList({ items, loading }: { items: EquipmentItem[], loading: boolean }) {
+export function ItemList({ items, loading, numLoadingItems }: { items: EquipmentItem[], loading: boolean, numLoadingItems?: number }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {items.map((item) => (
@@ -74,7 +75,7 @@ export function ItemList({ items, loading }: { items: EquipmentItem[], loading: 
         </div>
       ) : (
         loading ? (
-          ItemListLoading()
+          ItemListLoading({ numItems: numLoadingItems || 10 })
         ) : ""
       )}
     </div>
@@ -82,12 +83,6 @@ export function ItemList({ items, loading }: { items: EquipmentItem[], loading: 
 }
 
 export function ItemDescription({ item }: { item: EquipmentItem }) {
-  // Sort entries by price (lowest first)
-  const sortedEntries = [...item.entries].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-
-  // Get the best price (lowest current price)
-  const bestPrice = sortedEntries.length > 0 ? sortedEntries[0].price : item.all_time_low_price;
-
   // Extract domain name from URL
   const getDomainName = (url: string) => {
     try {
@@ -116,10 +111,15 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
       {/* Header Section */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-4">
+            <Breadcrumb items={breadcrumbConfigs.rubberDetails(item.name, item._id)} />
+          </div>
+
           <h1 className="text-3xl font-medium text-gray-900 mb-2">{item.name}</h1>
           <div className="flex items-center space-x-4">
             <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-              Best Price: ${bestPrice}
+              Best Price: {item.all_time_low_price}
             </div>
             <div className="text-gray-500 text-sm">
               {item.entries.length} store{item.entries.length !== 1 ? 's' : ''} available
@@ -138,7 +138,7 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
           </div>
 
           <div className="divide-y divide-gray-200">
-            {sortedEntries.map((entry, index) => (
+            {item.entries.map((entry, index) => (
               <div key={entry.url} className="p-6 hover:bg-gray-50 transition-colors duration-200">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -164,7 +164,7 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
                       <div className="text-2xl font-bold text-gray-900">
-                        ${entry.price}
+                        {entry.price}
                       </div>
                       {index === 0 && (
                         <div className="text-xs text-green-600 font-medium">
@@ -191,8 +191,8 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
           </div>
         </div>
 
-        {/* Price History Section */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+        {/* Price History Section - TODO*/}
+        {/* <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">Price History</h2>
             <p className="text-gray-600 mt-1">Track price changes over time</p>
@@ -214,13 +214,13 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">${entry.price}</p>
+                    <p className="text-lg font-semibold text-gray-900">{entry.price}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -242,9 +242,9 @@ function LoadingItem() {
   );
 }
 
-export function ItemListLoading() {
+export function ItemListLoading({ numItems = 10 }: { numItems?: number }) {
   return (
-    Array.from({ length: 10 }).map((_, index) => (
+    Array.from({ length: numItems }).map((_, index) => (
       <LoadingItem key={index} />
     ))
   );
