@@ -125,22 +125,13 @@ def get_with_name(args: argparse.Namespace, server: str) -> None:
             # If we only found one item, print its details
             # Start by getting the site with the lowest price
             quit = True
-            best_site = result[0]['entries'][0]
-            for entry in result[0]['entries']:
-                best_site = entry['price'] if (entry['price'] < best_site['price']) else best_site
 
             print(f'{args.equipment_type.capitalize()} entry {result[0]['name']} found:')
-            print(f'  Current Lowest Price:', best_site['price'])
-            print(f'    Site: {best_site['url']}')
-            print(f'    {turn_red(best_site['is_old'], True)}Last Updated: {best_site['last_updated']}{turn_red(best_site['is_old'], False)}\n')
 
             print(f'  All Time Lowest Price:', result[0]['all_time_low_price'])
-            # print(f'  URL:', result[0]['url'])
             if len(result[0]['entries']) > 1:
-                print(f'  Other Sites:')
                 for entry in result[0]['entries']:
-                    if entry != best_site:
-                        print(f'    {turn_red(entry['is_old'], True)}{entry['url']} - {entry['price']} - {entry['last_updated']}{turn_red(entry['is_old'], False)}')
+                    print(f'    {turn_red(entry['is_old'], True)}{entry['url']} - {entry['price']} - {entry['last_updated']}{turn_red(entry['is_old'], False)}')
 
 
 def get_all(args: argparse.Namespace, server: str) -> None:
