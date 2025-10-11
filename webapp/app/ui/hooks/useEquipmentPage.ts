@@ -60,7 +60,7 @@ export function useEquipmentPage({ equipmentType }: UseEquipmentPageProps) {
 
     setLoading(true);
     loadAllPages();
-  }, [equipmentType]);
+  }, [equipmentType, searchParams]);
 
   async function loadPage(page: number, query?: string, isInitialLoad: boolean = false) {
     setLoading(true);
