@@ -149,13 +149,12 @@ class SiteEntry():
     Represents an entry in the equipment item database.
     """
     def __init__(self, url, price, timestamp=datetime.now()):
-        self._id = self.compute_id(url)
         self.url = url
         self.price = price
         self.timestamp = timestamp
 
     def asdict(self):
-        return { '_id': self._id, 'url': self.url, 'price': self.price, 'last_updated': self.timestamp }
+        return { 'url': self.url, 'price': self.price, 'last_updated': self.timestamp }
 
     def compute_id(self, url):
         """
