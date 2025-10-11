@@ -38,7 +38,7 @@ export function useEquipmentPage({ equipmentType }: UseEquipmentPageProps) {
 
       while (currPage <= initialPage) {
         try {
-          const response = await fetch(`http://127.0.0.1:5000/${equipmentType}?page=${currPage}${thisQuery ? `&name=${thisQuery}` : ''}`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${equipmentType}?page=${currPage}${thisQuery ? `&name=${thisQuery}` : ''}`);
           const data = await response.json();
           if (response.status === 404) {
             setHasMore(false);
@@ -64,7 +64,7 @@ export function useEquipmentPage({ equipmentType }: UseEquipmentPageProps) {
 
   async function loadPage(page: number, query?: string, isInitialLoad: boolean = false) {
     setLoading(true);
-    const response = await fetch(`http://127.0.0.1:5000/${equipmentType}?page=${page}${query ? `&name=${query}` : ''}`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${equipmentType}?page=${page}${query ? `&name=${query}` : ''}`);
     const data = await response.json();
     if (response.status == 404) {
       setHasMore(false);
@@ -88,7 +88,7 @@ export function useEquipmentPage({ equipmentType }: UseEquipmentPageProps) {
     setPage(newPage);
     loadPage(newPage, query, false);
     params.set('page', newPage.toString());
-    replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   return {

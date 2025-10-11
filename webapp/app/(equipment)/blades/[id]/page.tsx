@@ -4,7 +4,7 @@ import { DetailPageWrapper } from "./detail-page-wrapper";
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const response = await fetch(`http://127.0.0.1:5000/blades/${id}`);
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/blades/${id}`);
   if (!response.ok) {
     notFound();
   }

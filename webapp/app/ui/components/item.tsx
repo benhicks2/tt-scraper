@@ -32,14 +32,14 @@ export function Item({image, title, price, slug}: {image: string, title: string,
       aria-label={`View details for ${title}`}
       onKeyDown={handleKeyDown}
     >
-      {/* Card Image Placeholder */}
-      <div className="h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+      {/* Card Image Placeholder - TODO: Add image */}
+      {/* <div className="h-48 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
         <div className="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center">
           <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         </div>
-      </div>
+      </div> */}
 
       {/* Card Content */}
       <div className="p-6">
@@ -243,7 +243,7 @@ function LoadingItem() {
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden animate-pulse">
       {/* Image placeholder */}
-      <div className="h-48 bg-gray-200"></div>
+      {/* <div className="h-48 bg-gray-200"></div> */}
 
       {/* Content placeholder */}
       <div className="p-6">

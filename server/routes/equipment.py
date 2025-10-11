@@ -116,9 +116,11 @@ def get_equipment(equipment_type):
     if equipment_name:
         result = list(items.find({'$text': {'$search': equipment_name}},
                                  {'score': {'$meta': 'textScore'}})
-                           .sort([('score', {'$meta': 'textScore'})])
+                           .sort([('score', {'$meta': 'textScore'}), ('_id', 1)])
                            .skip((page - 1) * RETRIEVE_LIMIT)
                            .limit(RETRIEVE_LIMIT))
+        for item in result:
+            print(item['name'])
     else:
         result = list(items.find({})
                            .skip((page - 1) * RETRIEVE_LIMIT)

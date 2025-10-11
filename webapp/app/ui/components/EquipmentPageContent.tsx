@@ -42,7 +42,7 @@ export function EquipmentPageContent({
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ItemList items={items} loading={loading} numLoadingItems={page * 10} equipmentType={equipmentType} />
+        <ItemList items={items} loading={loading} numLoadingItems={10} equipmentType={equipmentType} />
 
         {/* Load More Button with Material Design */}
         {hasMore && (
