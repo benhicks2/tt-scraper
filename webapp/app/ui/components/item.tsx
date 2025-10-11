@@ -106,7 +106,6 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
     }
   };
 
-  // Format date
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString('en-US', {
@@ -203,37 +202,6 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
             ))}
           </div>
         </div>
-
-        {/* Price History Section - TODO*/}
-        {/* <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Price History</h2>
-            <p className="text-gray-600 mt-1">Track price changes over time</p>
-          </div>
-
-          <div className="p-6">
-            <div className="space-y-4">
-              {item.entries.map((entry, index) => (
-                <div key={`${entry.url}-${index}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 text-sm font-medium">
-                        {index + 1}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{getDomainName(entry.url)}</p>
-                      <p className="text-sm text-gray-500">{formatDate(entry.last_updated)}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">{entry.price}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );

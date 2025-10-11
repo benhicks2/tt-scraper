@@ -29,51 +29,6 @@ db = client[config['database']['DB_NAME']]
 db[BLADE_ENDPOINT].create_index([('name', 'text')])
 db[RUBBER_ENDPOINT].create_index([('name', 'text')])
 
-@dp.route('/equipment', methods=['GET'])
-@cross_origin()
-def get_all_equipment():
-    """
-    Return all matching equipment items given the name, up to
-    RETRIEVE_LIMIT items. All matching equipment types are returned.
-    """
-    items = db[BLADE_ENDPOINT]
-    items.extend(db[RUBBER_ENDPOINT])
-
-    # Validate the input has a 'name' key
-    equipment_name = request.args.get('name', None)
-    page_str = request.args.get('page', '1')
-    page = 1
-    try:
-        page = int(page_str)
-    except ValueError:
-        return jsonify({'error': 'Invalid page number'}), 400
-
-    # Search for the equipment items
-    result = []
-    if equipment_name:
-        result = list(items.find({'$text': {'$search': equipment_name}},
-                                 {'score': {'$meta': 'textScore'}})
-                           .sort([('score', {'$meta': 'textScore'})])
-                           .skip((page - 1) * RETRIEVE_LIMIT)
-                           .limit(RETRIEVE_LIMIT))
-    else:
-        result = list(items.find({})
-                           .skip((page - 1) * RETRIEVE_LIMIT)
-                           .limit(RETRIEVE_LIMIT))
-
-
-    if not result or len(result) == 0:
-        return jsonify({'error': f'No equipment found'}), 404
-    if equipment_name and result[0]['name'].lower() == equipment_name.lower():
-        result = [result[0]]
-    if len(result) == 1:
-        for entry in result[0]['entries']:
-            entry['is_old'] = is_month_old(entry['last_updated'])
-    return jsonify({
-        'items': result,
-        'next': str(result[-1]['_id']) if len(result) == RETRIEVE_LIMIT else "null"
-    })
-
 
 @dp.route('/<equipment_type>/<id>', methods=['GET'])
 @cross_origin()
@@ -119,8 +74,6 @@ def get_equipment(equipment_type):
                            .sort([('score', {'$meta': 'textScore'}), ('_id', 1)])
                            .skip((page - 1) * RETRIEVE_LIMIT)
                            .limit(RETRIEVE_LIMIT))
-        for item in result:
-            print(item['name'])
     else:
         result = list(items.find({})
                            .skip((page - 1) * RETRIEVE_LIMIT)
@@ -138,37 +91,6 @@ def get_equipment(equipment_type):
         'items': result,
         'next': str(result[-1]['_id']) if len(result) == RETRIEVE_LIMIT else "null"
     })
-
-
-@dp.route('/<equipment_type>', methods=['DELETE'])
-def delete_equipment(equipment_type):
-    """
-    Delete the specified equipment item.
-    """
-    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
-        return jsonify({'error': 'Invalid equipment type'}), 400
-
-    data = request.get_json()
-    if not data or 'name' not in data or 'site' not in data:
-        return jsonify({'error': 'Invalid JSON body, name and site are required'}), 400
-
-    name = data['name'].strip()
-    site = data['site'].strip()
-
-    collection = db[equipment_type]
-
-    # Check if the equipment item exists, and there's only one match
-    num_matches = collection.count_documents({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})
-    if num_matches == 0:
-        return jsonify({'error': f'No matches found for the {equipment_type[:-1]} "{name}" at "{site}"'}), 404
-    if num_matches > 1:
-        return jsonify({'error': f'Multiple matches found for the {equipment_type[:-1]} "{name}" at "{site}"'}), 400
-
-    # Delete the equipment item
-    result = collection.delete_one({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})
-    if result.deleted_count > 0:
-        return jsonify({'status': 'success'}), 200
-    return jsonify({'error': f'Unable to delete the {equipment_type[:-1]} "{name}" at "{site}"'}), 404
 
 
 @dp.route('/<equipment_type>', methods=['PUT'])

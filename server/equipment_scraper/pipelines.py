@@ -98,15 +98,10 @@ class MongoPipeline:
             import re
 
             def extract_price_value(price_str: str) -> float:
-                # Remove currency symbols and extract numeric value
                 numeric_part = re.sub(r'[^\d.,]', '', str(price_str))
-                # Handle different decimal separators
                 if ',' in numeric_part and '.' in numeric_part:
-                    # Assume comma is thousands separator, dot is decimal
                     numeric_part = numeric_part.replace(',', '')
                 elif ',' in numeric_part:
-                    # Could be either thousands or decimal separator
-                    # For simplicity, treat as decimal if only one comma
                     if numeric_part.count(',') == 1:
                         numeric_part = numeric_part.replace(',', '.')
                     else:
@@ -129,10 +124,10 @@ class MongoPipeline:
                 """Convert price to USD for comparison."""
                 if currency == 'EUR':
                     # Using approximate EUR to USD conversion rate
-                    # In production, you might want to use a real-time exchange rate API
-                    return price_value * 1.08  # Approximate rate as of 2024
+                    # TODO: Pull real-time exchange rate
+                    return price_value * 1.08
                 else:
-                    return price_value  # Already USD or unknown currency
+                    return price_value
 
             new_value = extract_price_value(new_price)
             current_value = extract_price_value(current_low_price)
@@ -146,7 +141,6 @@ class MongoPipeline:
 
             return new_value_usd < current_value_usd
         except (ValueError, TypeError):
-            # If we can't parse the prices, assume they're not lower
             return False
 
 

@@ -24,6 +24,7 @@ class TT11Spider(scrapy.Spider):
             yield item
 
         next_page_button = response.css('li > a.next::attr(href)').get()
+        # TODO: This is currently broken
         #if next_page_button:
             # # The next page exists, so we want to manually increment the page count
             # self.page_count += 1

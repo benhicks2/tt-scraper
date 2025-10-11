@@ -88,6 +88,7 @@ export function useEquipmentPage({ equipmentType }: UseEquipmentPageProps) {
     setPage(newPage);
     loadPage(newPage, query, false);
     params.set('page', newPage.toString());
+    // TODO: fix scrolling
     // replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 

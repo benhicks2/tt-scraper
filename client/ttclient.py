@@ -6,7 +6,6 @@ Description: Retrieve and manage table tennis equipment data.
 
 Usage:
     ttclient get -e <equipment_type> [-n <name>]
-    ttclient delete -e <equipment_type> -n <name> -s <site>
 """
 import argparse
 import requests
@@ -41,7 +40,6 @@ def main():
 
     # Each command
     get_parser = subparsers.add_parser('get', help='Get equipment data', parents=[parent_parser])
-    delete_parser = subparsers.add_parser('delete', help='Delete equipment data', parents=[parent_parser])
     update_parser = subparsers.add_parser('update', help='Update equipment data by re-scraping the given equipment type', parents=[parent_parser])
 
     # Arguments for each command
@@ -50,16 +48,6 @@ def main():
                             required=False,
                             help='Name of the equipment to retrieve')
     get_parser.set_defaults(func=get)
-
-    # delete
-    delete_parser.add_argument('-n', '--name',
-                               required=True,
-                               help='Name of the equipment to delete')
-    delete_parser.add_argument('-s', '--site',
-                               required=True,
-                               help='Site to delete the equipment from, ' \
-                                    'can be a substring of the URL')
-    delete_parser.set_defaults(func=delete)
 
     # update
     update_parser.set_defaults(func=update)
@@ -78,31 +66,6 @@ def get(args: argparse.Namespace, server: str) -> None:
         get_with_name(args, server)
     else:
         get_all(args, server)
-
-
-def delete(args: argparse.Namespace, server: str) -> None:
-    """
-    Delete the given equipment item from the database (will be repopulated on the next scrape).
-    """
-
-    equipment_type = ROUTE_MAP[args.equipment_type]
-    # Confirm deletion
-    print(f'Are you sure you want to delete the {get_hostname(args.site)} {args.equipment_type} {args.name}?')
-    confirmation = input('Type "yes" to confirm: ')
-    if confirmation.lower() != 'yes' and confirmation.lower() != 'y':
-        print('Deletion cancelled')
-        return
-
-    try:
-        response = requests.delete(f'{server}/{equipment_type}',
-                                   json={'name': args.name, 'site': args.site})
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as err:
-        raise SystemExit(f'{response.json()["error"]}')
-    except requests.exceptions.RequestException as err:
-        raise SystemExit(err)
-
-    print(f'Deleted the {get_hostname(args.site)} {args.equipment_type} {args.name}')
 
 
 def update(args: argparse.Namespace, server: str) -> None:

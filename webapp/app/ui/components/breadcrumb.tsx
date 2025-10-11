@@ -45,6 +45,50 @@ export default function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
   );
 }
 
+// Breadcrumb skeleton component for loading states
+export function BreadcrumbSkeleton({ className = "" }: { className?: string }) {
+  return (
+    <nav className={`flex items-center space-x-1 text-sm text-gray-500 ${className}`} aria-label="Breadcrumb">
+      <ol className="flex items-center space-x-1">
+        {/* Home skeleton */}
+        <li className="flex items-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-12 skeleton-shimmer"></div>
+          </div>
+        </li>
+
+        {/* Separator */}
+        <li className="flex items-center">
+          <svg className="h-4 w-4 text-gray-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </li>
+
+        {/* Category skeleton */}
+        <li className="flex items-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-16 skeleton-shimmer"></div>
+          </div>
+        </li>
+
+        {/* Separator */}
+        <li className="flex items-center">
+          <svg className="h-4 w-4 text-gray-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </li>
+
+        {/* Product name skeleton */}
+        <li className="flex items-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-24 skeleton-shimmer"></div>
+          </div>
+        </li>
+      </ol>
+    </nav>
+  );
+}
+
 // Predefined breadcrumb configurations
 export const breadcrumbConfigs = {
   home: [{ label: "Home", href: "/", current: true }],
