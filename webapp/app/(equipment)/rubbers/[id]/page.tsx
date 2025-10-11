@@ -10,6 +10,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const data = await response.json();
 
   return (
-    <ItemDescription item={data} />
+    <ItemDescription item={data} equipmentType="rubbers" />
   );
 }

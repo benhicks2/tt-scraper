@@ -95,7 +95,7 @@ export function ItemList({ items, loading, numLoadingItems, equipmentType }: { i
   );
 }
 
-export function ItemDescription({ item }: { item: EquipmentItem }) {
+export function ItemDescription({ item, equipmentType }: { item: EquipmentItem, equipmentType: 'rubbers' | 'blades' }) {
   // Extract domain name from URL
   const getDomainName = (url: string) => {
     try {
@@ -125,7 +125,11 @@ export function ItemDescription({ item }: { item: EquipmentItem }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Breadcrumb Navigation */}
           <div className="mb-4">
-            <Breadcrumb items={breadcrumbConfigs.rubberDetails(item.name, item._id)} />
+            <Breadcrumb items={
+              equipmentType === 'rubbers'
+                ? breadcrumbConfigs.rubberDetails(item.name, item._id)
+                : breadcrumbConfigs.bladeDetails(item.name, item._id)
+            } />
           </div>
 
           <h1 className="text-3xl font-medium text-gray-900 mb-2">{item.name}</h1>
