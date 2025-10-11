@@ -23,8 +23,8 @@ dp = Blueprint('equipment', __name__)
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-client = MongoClient(config['database']['host'], config['database'].getint('port'))
-db = client[config['database']['db_name']]
+client = MongoClient(config['database']['HOST'], config['database'].getint('PORT'))
+db = client[config['database']['DB_NAME']]
 
 db[BLADE_ENDPOINT].create_index([('name', 'text')])
 db[RUBBER_ENDPOINT].create_index([('name', 'text')])
