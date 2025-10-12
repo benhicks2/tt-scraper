@@ -9,6 +9,7 @@ from datetime import datetime
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 import logging
+import configparser
 
 RUBBER_COLLECTION_NAME = 'rubbers'
 BLADE_COLLECTION_NAME = 'blades'
@@ -22,9 +23,12 @@ class MongoPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
+        config = configparser.ConfigParser()
+        config.read('../config.ini')
+        print(config)
         return cls(
-            mongo_uri=crawler.settings.get('MONGO_URI'),
-            mongo_db=crawler.settings.get('MONGO_DATABASE'),
+            mongo_uri=f"{config['database']['HOST']}:{config['database']['PORT']}",
+            mongo_db=config['database']['DB_NAME'],
         )
 
     def open_spider(self, spider):
@@ -149,12 +153,13 @@ class SiteEntry():
     Represents an entry in the equipment item database.
     """
     def __init__(self, url, price, timestamp=datetime.now()):
+        self._id = self.compute_id(url)
         self.url = url
         self.price = price
         self.timestamp = timestamp
 
     def asdict(self):
-        return { 'url': self.url, 'price': self.price, 'last_updated': self.timestamp }
+        return { '_id': self._id, 'url': self.url, 'price': self.price, 'last_updated': self.timestamp }
 
     def compute_id(self, url):
         """
