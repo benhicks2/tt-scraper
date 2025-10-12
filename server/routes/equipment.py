@@ -1,4 +1,5 @@
 from flask import jsonify, request, Blueprint
+from flask_cors import cross_origin
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import configparser
@@ -22,94 +23,74 @@ dp = Blueprint('equipment', __name__)
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-client = MongoClient(config['database']['host'], config['database'].getint('port'))
-db = client[config['database']['db_name']]
+client = MongoClient(config['database']['HOST'], config['database'].getint('PORT'))
+db = client[config['database']['DB_NAME']]
 
 db[BLADE_ENDPOINT].create_index([('name', 'text')])
 db[RUBBER_ENDPOINT].create_index([('name', 'text')])
 
-@dp.route('/equipment', methods=['GET'])
-def get_equipment_options():
+
+@dp.route('/<equipment_type>/<id>', methods=['GET'])
+@cross_origin()
+def get_equipment_item(equipment_type, id):
     """
-    Return all available equipment types.
+    Return a specific equipment item by ID.
     """
-    return jsonify(db.list_collection_names())
+    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
+        return jsonify({'error': 'Invalid equipment type'}), 400
+
+    item = db[equipment_type].find_one({'_id': id})
+    if not item:
+        return jsonify({'error': f'No {equipment_type[:-1]} found with ID {id}'}), 404
+    return jsonify(item)
 
 
 @dp.route('/<equipment_type>', methods=['GET'])
+@cross_origin()
 def get_equipment(equipment_type):
     """
-    Return all matching equipment items given the name.
-    If no name is provided, return all items of the given type.
+    Return all matching equipment items given the name, up to
+    RETRIEVE_LIMIT items.
     """
     if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
         return jsonify({'error': 'Invalid equipment type'}), 400
 
     items = db[equipment_type]
-    cursor = None
 
     # Validate the input has a 'name' key
-    equipment_name = None
-    if request.data:
-        if not request.is_json:
-            return jsonify({'error': 'Invalid JSON in request body'}), 400
-        data = request.get_json()
-        if 'name' in data:
-            equipment_name = data['name'].strip()
-        if 'cursor' in data:
-            cursor = data['cursor']
+    equipment_name = request.args.get('name', None)
+    page_str = request.args.get('page', '1')
+    page = 1
+    try:
+        page = int(page_str)
+    except ValueError:
+        return jsonify({'error': 'Invalid page number'}), 400
 
-    # Pagination parameters
+    # Search for the equipment items
+    result = []
     if equipment_name:
-        search = {'$text': {'$search': equipment_name}}
+        result = list(items.find({'$text': {'$search': equipment_name}},
+                                 {'score': {'$meta': 'textScore'}})
+                           .sort([('score', {'$meta': 'textScore'}), ('_id', 1)])
+                           .skip((page - 1) * RETRIEVE_LIMIT)
+                           .limit(RETRIEVE_LIMIT))
     else:
-        search = {}
-    if cursor:
-        search['_id'] = {'$gt': cursor}
+        result = list(items.find({})
+                           .skip((page - 1) * RETRIEVE_LIMIT)
+                           .limit(RETRIEVE_LIMIT))
 
-    # Search for the equipment in the database
-    result = list(items.find(search).sort("_id", 1).limit(RETRIEVE_LIMIT))
 
     if not result or len(result) == 0:
         return jsonify({'error': f'No {equipment_type} found'}), 404
+    if equipment_name and result[0]['name'].lower() == equipment_name.lower():
+        result = [result[0]]
     if len(result) == 1:
         for entry in result[0]['entries']:
             entry['is_old'] = is_month_old(entry['last_updated'])
     return jsonify({
         'items': result,
-        'next': str(result[-1]['_id'])
+        'next': str(result[-1]['_id']) if len(result) == RETRIEVE_LIMIT else "null"
     })
-
-
-@dp.route('/<equipment_type>', methods=['DELETE'])
-def delete_equipment(equipment_type):
-    """
-    Delete the specified equipment item.
-    """
-    if (equipment_type not in VALID_EQUIPMENT_TYPES) or (equipment_type not in db.list_collection_names()):
-        return jsonify({'error': 'Invalid equipment type'}), 400
-
-    data = request.get_json()
-    if not data or 'name' not in data or 'site' not in data:
-        return jsonify({'error': 'Invalid JSON body, name and site are required'}), 400
-
-    name = data['name'].strip()
-    site = data['site'].strip()
-
-    collection = db[equipment_type]
-
-    # Check if the equipment item exists, and there's only one match
-    num_matches = collection.count_documents({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})
-    if num_matches == 0:
-        return jsonify({'error': f'No matches found for the {equipment_type[:-1]} "{name}" at "{site}"'}), 404
-    if num_matches > 1:
-        return jsonify({'error': f'Multiple matches found for the {equipment_type[:-1]} "{name}" at "{site}"'}), 400
-
-    # Delete the equipment item
-    result = collection.delete_one({'name': {'$regex': name, '$options': 'i'}, 'url': {'$regex': site, '$options': 'i'}})
-    if result.deleted_count > 0:
-        return jsonify({'status': 'success'}), 200
-    return jsonify({'error': f'Unable to delete the {equipment_type[:-1]} "{name}" at "{site}"'}), 404
 
 
 @dp.route('/<equipment_type>', methods=['PUT'])
@@ -124,10 +105,10 @@ def update_equipment(equipment_type):
 
     if equipment_type == BLADE_ENDPOINT:
         process.crawl(BladeSpiderMegaspin)
-        # process.crawl(BladeSpiderTT11)
+        process.crawl(BladeSpiderTT11)
     elif equipment_type == RUBBER_ENDPOINT:
         process.crawl(RubberSpiderMegaspin)
-        # process.crawl(RubberSpiderTT11)
+        process.crawl(RubberSpiderTT11)
     process.start(stop_after_crawl=True)
     # TODO: Add a websocket so we can continuously update the status
     process.stop()

@@ -24,11 +24,12 @@ class TT11Spider(scrapy.Spider):
             yield item
 
         next_page_button = response.css('li > a.next::attr(href)').get()
-        if next_page_button:
-            # The next page exists, so we want to manually increment the page count
-            self.page_count += 1
-            # Quit out if we have already scraped 10 pages
-            if self.page_count > 10:
-                return
-            next_page = f'{self.start_urls[0]}?p={self.page_count}'
-            yield scrapy.Request(url=next_page, callback=self.parse, cookies={'currency': 'USD'})
+        # TODO: This is currently broken
+        #if next_page_button:
+            # # The next page exists, so we want to manually increment the page count
+            # self.page_count += 1
+            # # Quit out if we have already scraped 10 pages
+            # if self.page_count > 10:
+            #     return
+            # next_page = f'{self.start_urls[0]}?p={self.page_count}'
+            # yield scrapy.Request(url=next_page, callback=self.parse, cookies={'currency': 'USD'})

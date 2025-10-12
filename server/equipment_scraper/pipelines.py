@@ -36,7 +36,6 @@ class MongoPipeline:
 
     def process_item(self, item, spider):
         item_id = self.compute_id(item)
-        item_dict = ItemAdapter(item).asdict()
         site_entry = SiteEntry(url = item['url'], price = item['price'])
 
         if RUBBER_COLLECTION_NAME[:-1] in spider.name:
@@ -44,28 +43,27 @@ class MongoPipeline:
         else:
             self.COLLECTION_NAME = BLADE_COLLECTION_NAME
 
-        site_entry._id = site_entry.compute_id(site_entry.url)
-
         logging.info('Process item: %s', item['name'])
 
-        # Try to update the item in the database if it exists
+        # Try to update an existing site entry within an existing equipment item
         result = self.db[self.COLLECTION_NAME].update_one(
             filter={'_id': item_id, 'entries._id': site_entry._id},
-            update={'$set': {'entries.$[elem].price': site_entry.price}},
-            array_filters=[{'elem._id': site_entry._id}]
+            update={'$set': {'entries.$.price': site_entry.price, 'entries.$.last_updated': site_entry.timestamp}}
         )
+        logging.info('Update existing site entry result: %s', result.raw_result)
 
-        # If no items were matched, insert a new array entry
+        # If no existing site entry was updated, try to add a new site entry to existing equipment item
         if result.matched_count == 0:
-            logging.info('Attempting to insert new entry for item: %s with ID %s', item['name'], item_id)
+            logging.info('Attempting to add new site entry for existing item: %s with ID %s', item['name'], item_id)
             result = self.db[self.COLLECTION_NAME].update_one(
                 filter={'_id': item_id},
                 update={'$push': {'entries': site_entry.asdict()}}
             )
+            logging.info('Add new site entry result: %s', result.raw_result)
 
-        # If even the array insert failed, insert a new rubber item
+        # If even adding to existing item failed, create a new equipment item
         if result.matched_count == 0:
-            logging.info('Inserting new item: %s with ID %s', item['name'], item_id)
+            logging.info('Creating new equipment item: %s with ID %s', item['name'], item_id)
             self.db[self.COLLECTION_NAME].insert_one({
                 '_id': item_id,
                 'name': item['name'],
@@ -75,7 +73,7 @@ class MongoPipeline:
         else:
             # An existing item was updated, update the cheapest price if necessary
             db_item = self.db[self.COLLECTION_NAME].find_one({'_id': item_id})
-            if db_item and db_item['all_time_low_price'] > site_entry.price:
+            if db_item and self._is_price_lower(site_entry.price, db_item['all_time_low_price']):
                 logging.info('Updating lowest price for item: %s with ID %s', item['name'], item_id)
                 self.db[self.COLLECTION_NAME].update_one(
                     filter={'_id': item_id},
@@ -89,6 +87,61 @@ class MongoPipeline:
         """
         name = item['name'].casefold().strip()
         return hashlib.sha256((name).encode('utf-8')).hexdigest()
+
+    def _is_price_lower(self, new_price: str, current_low_price: str) -> bool:
+        """
+        Compare two price strings to determine if the new price is lower.
+        Handles different currencies and formats, converting EUR to USD for comparison.
+        """
+        try:
+            # Extract numeric values from price strings
+            import re
+
+            def extract_price_value(price_str: str) -> float:
+                numeric_part = re.sub(r'[^\d.,]', '', str(price_str))
+                if ',' in numeric_part and '.' in numeric_part:
+                    numeric_part = numeric_part.replace(',', '')
+                elif ',' in numeric_part:
+                    if numeric_part.count(',') == 1:
+                        numeric_part = numeric_part.replace(',', '.')
+                    else:
+                        numeric_part = numeric_part.replace(',', '')
+
+                return float(numeric_part)
+
+            def detect_currency(price_str: str) -> str:
+                """Detect currency from price string."""
+                price_str = str(price_str).upper()
+                if '€' in price_str or 'EUR' in price_str:
+                    return 'EUR'
+                elif '$' in price_str or 'USD' in price_str:
+                    return 'USD'
+                else:
+                    # Default to USD if no currency symbol found
+                    return 'USD'
+
+            def convert_to_usd(price_value: float, currency: str) -> float:
+                """Convert price to USD for comparison."""
+                if currency == 'EUR':
+                    # Using approximate EUR to USD conversion rate
+                    # TODO: Pull real-time exchange rate
+                    return price_value * 1.08
+                else:
+                    return price_value
+
+            new_value = extract_price_value(new_price)
+            current_value = extract_price_value(current_low_price)
+
+            # Detect currencies and convert to USD
+            new_currency = detect_currency(new_price)
+            current_currency = detect_currency(current_low_price)
+
+            new_value_usd = convert_to_usd(new_value, new_currency)
+            current_value_usd = convert_to_usd(current_value, current_currency)
+
+            return new_value_usd < current_value_usd
+        except (ValueError, TypeError):
+            return False
 
 
 class SiteEntry():

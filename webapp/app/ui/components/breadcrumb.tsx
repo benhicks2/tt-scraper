@@ -1,0 +1,113 @@
+"use client";
+import React from "react";
+import Link from "next/link";
+
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  current?: boolean;
+}
+
+interface BreadcrumbProps {
+  items: BreadcrumbItem[];
+  className?: string;
+}
+
+export default function Breadcrumb({ items, className = "" }: BreadcrumbProps) {
+  return (
+    <nav className={`flex items-center space-x-1 text-sm text-gray-500 ${className}`} aria-label="Breadcrumb">
+      <ol className="flex items-center space-x-1">
+        {items.map((item, index) => (
+          <li key={index} className="flex items-center">
+            {index > 0 && (
+              <svg className="h-4 w-4 text-gray-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            )}
+            {item.current ? (
+              <span className="text-gray-900 font-medium" aria-current="page">
+                {item.label}
+              </span>
+            ) : item.href ? (
+              <Link
+                href={item.href}
+                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span className="text-gray-500">{item.label}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+// Breadcrumb skeleton component for loading states
+export function BreadcrumbSkeleton({ className = "" }: { className?: string }) {
+  return (
+    <nav className={`flex items-center space-x-1 text-sm text-gray-500 ${className}`} aria-label="Breadcrumb">
+      <ol className="flex items-center space-x-1">
+        {/* Home skeleton */}
+        <li className="flex items-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-12 skeleton-shimmer"></div>
+          </div>
+        </li>
+
+        {/* Separator */}
+        <li className="flex items-center">
+          <svg className="h-4 w-4 text-gray-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </li>
+
+        {/* Category skeleton */}
+        <li className="flex items-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-16 skeleton-shimmer"></div>
+          </div>
+        </li>
+
+        {/* Separator */}
+        <li className="flex items-center">
+          <svg className="h-4 w-4 text-gray-400 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </li>
+
+        {/* Product name skeleton */}
+        <li className="flex items-center">
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-24 skeleton-shimmer"></div>
+          </div>
+        </li>
+      </ol>
+    </nav>
+  );
+}
+
+// Predefined breadcrumb configurations
+export const breadcrumbConfigs = {
+  home: [{ label: "Home", href: "/", current: true }],
+  rubbers: [
+    { label: "Home", href: "/" },
+    { label: "Rubbers", current: true }
+  ],
+  blades: [
+    { label: "Home", href: "/" },
+    { label: "Blades", current: true }
+  ],
+  rubberDetails: (rubberName: string, rubberId: string) => [
+    { label: "Home", href: "/" },
+    { label: "Rubbers", href: "/rubbers" },
+    { label: rubberName, current: true }
+  ],
+  bladeDetails: (bladeName: string, bladeId: string) => [
+    { label: "Home", href: "/" },
+    { label: "Blades", href: "/blades" },
+    { label: bladeName, current: true }
+  ]
+};

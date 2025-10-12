@@ -6,7 +6,7 @@ class MegaspinSpider(scrapy.Spider):
     """
     Spider for scraping equipment data from Megaspin. Can handle any equipment type.
     """
-    allowed_domains = ['www.megaspin.com']
+    allowed_domains = ['www.megaspin.net']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
