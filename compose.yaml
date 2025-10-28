@@ -5,7 +5,7 @@ services:
     build:
       context: ./webapp
       args:
-        NEXT_PUBLIC_API_URL: http://host.docker.internal:5000
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
       - "3000:3000"
     environment:
