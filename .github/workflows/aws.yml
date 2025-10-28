@@ -1,0 +1,32 @@
+name: tt-scraper
+run-name: Deploy - ${{ github.event.head_commit.message }}
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1
+      env:
+        MONGODB_URI: "mongodb://host.docker.internal:27017"
+        MONGODB_DB_NAME: "ttequipment_db"
+        ALLOWED_ORIGINS: "http://localhost:3000"
+        NEXT_PUBLIC_API_URL: "http://host.docker.internal:5000"
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        port: 22
+        envs: MONGODB_URI, MONGODB_DB_NAME, ALLOWED_ORIGINS, NEXT_PUBLIC_API_URL
+        script: |
+          cd tt-scraper
+          git pull origin main
+          docker compose up --build -d --force-recreate
+          docker image prune -f
