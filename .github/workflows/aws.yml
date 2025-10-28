@@ -28,5 +28,5 @@ jobs:
         script: |
           cd tt-scraper
           git pull origin main
-          docker compose up --build -d --force-recreate
+          docker-compose up --build -d --force-recreate
           docker image prune -f
