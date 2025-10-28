@@ -26,6 +26,7 @@ jobs:
         port: 22
         envs: MONGODB_URI, MONGODB_DB_NAME, ALLOWED_ORIGINS, NEXT_PUBLIC_API_URL
         script: |
+          set -e
           cd tt-scraper
           git pull origin main
           docker-compose up --build -d --force-recreate
