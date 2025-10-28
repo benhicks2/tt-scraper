@@ -15,7 +15,7 @@ jobs:
     - name: Deploy via SSH
       uses: appleboy/ssh-action@v1
       env:
-        MONGODB_URI: "todo"
+        MONGODB_URI: "mongodb://host.docker.internal:27017"
         MONGODB_DB_NAME: "ttequipment_db"
         ALLOWED_ORIGINS: "http://${{ secrets.EC2_HOST }}:3000"
         NEXT_PUBLIC_API_URL: "http://${{ secrets.EC2_HOST }}:5000"
