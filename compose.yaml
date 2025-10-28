@@ -1,0 +1,46 @@
+name: tt-scraper
+
+services:
+  frontend:
+    build:
+      context: ./webapp
+      args:
+        NEXT_PUBLIC_API_URL: http://host.docker.internal:5000
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - back-tier
+
+  backend:
+    build: ./server
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      # These are set in the .env file
+      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    networks:
+      - back-tier
+  # mongodb:
+  #   image: mongo:latest
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=password
+
+networks:
+  # front-tier: {}
+  back-tier:
+    driver: bridge
+
+volumes:
+  mongodb_data:

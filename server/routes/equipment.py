@@ -2,7 +2,7 @@ from flask import jsonify, request, Blueprint
 from flask_cors import cross_origin
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-import configparser
+import os
 import datetime
 
 from scrapy.crawler import CrawlerProcess
@@ -20,11 +20,8 @@ RETRIEVE_LIMIT = 10
 
 dp = Blueprint('equipment', __name__)
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-
-client = MongoClient(config['database']['HOST'], config['database'].getint('PORT'))
-db = client[config['database']['DB_NAME']]
+client = MongoClient(os.getenv('MONGODB_URI'))
+db = client[os.getenv('MONGODB_DB_NAME')]
 
 db[BLADE_ENDPOINT].create_index([('name', 'text')])
 db[RUBBER_ENDPOINT].create_index([('name', 'text')])
@@ -94,6 +91,7 @@ def get_equipment(equipment_type):
 
 
 @dp.route('/<equipment_type>', methods=['PUT'])
+@cross_origin()
 def update_equipment(equipment_type):
     """
     Update the specified equipment item.

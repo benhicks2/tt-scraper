@@ -6,10 +6,8 @@
 import hashlib
 import pymongo
 from datetime import datetime
-# useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
 import logging
-import configparser
+import os
 
 RUBBER_COLLECTION_NAME = 'rubbers'
 BLADE_COLLECTION_NAME = 'blades'
@@ -23,12 +21,9 @@ class MongoPipeline:
 
     @classmethod
     def from_crawler(cls, crawler):
-        config = configparser.ConfigParser()
-        config.read('../config.ini')
-        print(config)
         return cls(
-            mongo_uri=f"{config['database']['HOST']}:{config['database']['PORT']}",
-            mongo_db=config['database']['DB_NAME'],
+            mongo_uri=os.getenv('MONGODB_URI'),
+            mongo_db=os.getenv('MONGODB_DB_NAME'),
         )
 
     def open_spider(self, spider):
