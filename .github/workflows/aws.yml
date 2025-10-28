@@ -27,6 +27,10 @@ jobs:
         envs: MONGODB_URI, MONGODB_DB_NAME, ALLOWED_ORIGINS, NEXT_PUBLIC_API_URL
         script: |
           set -e
+          echo MONGODB_URI: $MONGODB_URI
+          echo MONGODB_DB_NAME: $MONGODB_DB_NAME
+          echo ALLOWED_ORIGINS: $ALLOWED_ORIGINS
+          echo NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL
           cd tt-scraper
           git pull origin main
           docker-compose up --build -d --force-recreate
