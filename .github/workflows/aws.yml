@@ -31,7 +31,7 @@ jobs:
           echo MONGODB_DB_NAME: $MONGODB_DB_NAME
           echo ALLOWED_ORIGINS: $ALLOWED_ORIGINS
           echo NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL
-          cd tt-scraper
+          cd ~/website-services/tt-scraper
           git pull origin main
           docker-compose up --build -d --force-recreate
           docker image prune -f
