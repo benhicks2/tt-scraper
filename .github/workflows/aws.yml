@@ -33,5 +33,5 @@ jobs:
           echo NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL
           cd ~/website-services/tt-scraper
           git pull origin main
-          docker-compose up --build -d --force-recreate
+          docker compose up --build -d --force-recreate
           docker image prune -f
